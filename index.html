@@ -54,18 +54,30 @@
     display: block;
     width: 100%;
     height: auto;
-    margin: 48px 0 8px;
+    margin: 8px 0 8px;
   }
   .pentagrama .linea { stroke: rgba(255,255,255,0.28); stroke-width: 1.2; }
   .pentagrama .clave { fill: none; stroke: rgba(255,255,255,0.5); stroke-width: 2; stroke-linecap: round; }
   .pentagrama .nota { fill: var(--dorado); }
   .pentagrama .plica { stroke: var(--dorado); stroke-width: 2; }
   .portada h1 {
-    font-weight: 400;
-    font-size: clamp(42px, 9vw, 72px);
-    line-height: 1.04;
+    font-weight: 500;
+    font-size: clamp(46px, 10vw, 80px);
+    line-height: 1.02;
     letter-spacing: -0.015em;
     margin-top: 8px;
+  }
+  .firma-marca {
+    font-size: 17px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 10px;
+  }
+  .lema {
+    font-style: italic;
+    font-size: clamp(26px, 5vw, 34px);
+    line-height: 1.2;
+    color: var(--dorado-claro);
+    margin-top: 28px;
   }
   .portada .bajada {
     font-size: clamp(20px, 3.2vw, 23px);
@@ -264,7 +276,6 @@
 
 <header class="portada">
   <div class="contenedor">
-    <p class="marca">A Primera Vista <span>con Federico Chlopecki</span></p>
 
     <!-- Un pentagrama con notas que suben: se sale con una nota más alta que con la que se entró -->
     <svg class="pentagrama" viewBox="0 0 640 120" role="img" aria-label="Un pentagrama con notas que suben: la primera busca un instante y después encuentra su lugar">
@@ -285,7 +296,9 @@
       <g class="sube" style="animation-delay:2.0s"><g class="eureka"><ellipse class="nota" cx="560" cy="40" rx="11" ry="8" transform="rotate(-20 560 40)"/></g><line class="plica" x1="550" y1="43" x2="550" y2="88"/></g>
     </svg>
 
-    <h1>Que la partitura te hable.</h1>
+    <h1>A Primera Vista</h1>
+    <p class="firma-marca">Con Federico Chlopecki</p>
+    <p class="lema">Que la partitura te hable.</p>
     <p class="bajada">Lectura musical a primera vista, mano a mano con Fede.</p>
 
     <div class="accion">
