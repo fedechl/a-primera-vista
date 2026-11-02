@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Primera Vista · Que la partitura te hable</title>
+<meta name="description" content="Lectura musical a primera vista, mano a mano con Fede. Empezá por un Diagnóstico de 30 minutos con devolución escrita.">
+<meta property="og:title" content="A Primera Vista">
+<meta property="og:description" content="Que la partitura te hable. Lectura musical a primera vista, mano a mano con Fede.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #052E5E;
+    --azul-hondo: #031F41;
+    --dorado: #CD9E34;
+    --dorado-claro: #E4C278;
+    --papel: #F5F7FA;
+    --linea: #D6DDE7;
+    --texto: #052E5E;
+    --texto-suave: #3D5576;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--papel);
+    color: var(--texto);
+    font-family: "Spectral", Georgia, serif;
+    font-size: 19px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--dorado); outline-offset: 3px; border-radius: 2px; }
+
+  .contenedor { width: 100%; max-width: 680px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- Portada: el pentagrama ---------- */
+  .portada {
+    background: var(--azul);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    padding: 56px 0 72px;
+  }
+  .marca {
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    color: var(--dorado-claro);
+  }
+  .marca span { color: rgba(255,255,255,0.7); }
+  .pentagrama {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 48px 0 8px;
+  }
+  .pentagrama .linea { stroke: rgba(255,255,255,0.28); stroke-width: 1.2; }
+  .pentagrama .clave { fill: none; stroke: rgba(255,255,255,0.5); stroke-width: 2; stroke-linecap: round; }
+  .pentagrama .nota { fill: var(--dorado); }
+  .pentagrama .plica { stroke: var(--dorado); stroke-width: 2; }
+  .portada h1 {
+    font-weight: 400;
+    font-size: clamp(42px, 9vw, 72px);
+    line-height: 1.04;
+    letter-spacing: -0.015em;
+    margin-top: 8px;
+  }
+  .portada .bajada {
+    font-size: clamp(20px, 3.2vw, 23px);
+    color: rgba(255,255,255,0.85);
+    margin-top: 20px;
+    max-width: 30ch;
+  }
+  .accion { margin-top: 36px; }
+  .boton {
+    display: inline-block;
+    background: var(--dorado);
+    color: var(--azul-hondo);
+    font-family: inherit;
+    font-size: 19px;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 15px 28px;
+    border-radius: 999px;
+    transition: background-color .15s ease;
+  }
+  .boton:hover { background: var(--dorado-claro); }
+  .accion .detalle {
+    font-size: 16px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 12px;
+    max-width: 38ch;
+  }
+
+  /* La primera nota aparece tenue, un paso más arriba; duda apenas y baja a su lugar. Las demás ya caen seguras. Al llegar a la última: ¡es esta! */
+  .pentagrama .eco { fill: none; stroke: var(--dorado); stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  @media (prefers-reduced-motion: no-preference) {
+    .pentagrama .sube { opacity: 0; transform: translateY(10px); animation: sube .45s cubic-bezier(.2,.8,.3,1) forwards; }
+    .pentagrama .busca { opacity: 0; animation: busca .8s ease-in-out .2s forwards; }
+    .pentagrama .eureka { transform-box: fill-box; transform-origin: center; animation: eureka .5s ease-out 2.45s; }
+    .pentagrama .eco { animation: eco 1s ease-out 2.45s forwards; }
+    @keyframes eureka { 0% { transform: scale(1); } 35% { transform: scale(1.15); } 100% { transform: scale(1); } }
+    @keyframes eco { 0% { opacity: .5; transform: scale(1); } 100% { opacity: 0; transform: scale(2.4); } }
+    @keyframes sube { to { opacity: 1; transform: translateY(0); } }
+    @keyframes busca { 0% { opacity: 0; transform: translateY(-10px); } 30%, 45% { opacity: .6; transform: translateY(-10px); } 100% { opacity: 1; transform: translateY(0); } }
+  }
+
+  /* ---------- Secciones ---------- */
+  section { padding: 72px 0; }
+  section + section { border-top: 1px solid var(--linea); }
+  h2 {
+    font-weight: 500;
+    font-size: clamp(28px, 5vw, 36px);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-bottom: 24px;
+  }
+  p + p { margin-top: 16px; }
+  .suave { color: var(--texto-suave); }
+
+  .te-pasa { list-style: none; margin: 8px 0 28px; }
+  .te-pasa li {
+    padding: 14px 0 14px 34px;
+    position: relative;
+    border-bottom: 1px solid var(--linea);
+  }
+  .te-pasa li::before {
+    content: "";
+    position: absolute;
+    left: 4px; top: 25px;
+    width: 13px; height: 10px;
+    border-radius: 50%;
+    background: var(--dorado);
+    transform: rotate(-20deg);
+  }
+  .remate { font-size: 22px; line-height: 1.45; }
+
+  .destacado {
+    font-size: 22px;
+    line-height: 1.45;
+    font-style: italic;
+    padding-left: 20px;
+    border-left: 3px solid var(--dorado);
+    margin: 24px 0;
+  }
+  p.destacado + p { margin-top: 0; }
+
+  /* Voces */
+  .cifras { font-size: 22px; line-height: 1.45; }
+  .intro-voces { color: var(--texto-suave); margin: 20px 0 8px; }
+  .voz { margin: 0; padding: 22px 0; border-top: 1px solid var(--linea); }
+  .voz blockquote { font-size: 21px; line-height: 1.45; font-style: italic; }
+  .voz figcaption { font-size: 16px; color: var(--texto-suave); margin-top: 6px; }
+
+  /* Tres caminos */
+  .camino { padding: 28px 0 28px 24px; border-left: 3px solid var(--dorado); }
+  .camino + .camino { margin-top: 20px; }
+  .camino h3 { font-weight: 600; font-size: 24px; line-height: 1.25; }
+  .camino .para { font-style: italic; font-size: 20px; margin-top: 6px; }
+  .camino .como { color: var(--texto-suave); margin-top: 10px; }
+  .camino.club { border-left-color: var(--azul); }
+  .enlace {
+    display: inline-block;
+    margin-top: 14px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--dorado);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  /* Cómo se empieza: es una secuencia real */
+  .pasos { list-style: none; counter-reset: paso; margin-top: 8px; }
+  .pasos li {
+    counter-increment: paso;
+    position: relative;
+    padding: 0 0 26px 58px;
+  }
+  .pasos li::before {
+    content: counter(paso);
+    position: absolute; left: 0; top: -2px;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 2px solid var(--azul);
+    display: grid; place-items: center;
+    font-weight: 600; font-size: 18px;
+  }
+  .pasos li:not(:last-child)::after {
+    content: "";
+    position: absolute; left: 19px; top: 40px; bottom: 4px;
+    width: 2px; background: var(--linea);
+  }
+  .pasos strong { font-weight: 600; }
+  .bonifica {
+    margin-top: 6px;
+    padding: 18px 20px;
+    background: #fff;
+    border: 1px solid var(--linea);
+    border-radius: 6px;
+    font-size: 17px;
+  }
+
+  /* Preguntas frecuentes */
+  .faq { border-top: 1px solid var(--linea); }
+  .faq:last-of-type { border-bottom: 1px solid var(--linea); }
+  .faq summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 18px 40px 18px 0;
+    font-weight: 600;
+    position: relative;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: "+";
+    position: absolute; right: 4px; top: 14px;
+    font-size: 26px; font-weight: 400; color: var(--dorado);
+    transition: transform .2s ease;
+  }
+  .faq[open] summary::after { transform: rotate(45deg); }
+  .faq p { padding: 0 0 20px; color: var(--texto-suave); }
+  .faq a { text-decoration-color: var(--dorado); text-underline-offset: 3px; }
+
+  /* Garantía */
+  .garantia {
+    background: var(--azul);
+    color: #fff;
+    border-top: none;
+  }
+  .garantia h2 { color: var(--dorado-claro); }
+  .garantia .cita { font-size: clamp(22px, 4vw, 27px); line-height: 1.4; }
+  .garantia .suave { color: rgba(255,255,255,0.7); margin-top: 18px; font-size: 17px; }
+  .garantia + section { border-top: none; }
+
+  /* Fede */
+  .firma { margin-top: 24px; font-style: italic; }
+
+  /* Cierre */
+  .cierre { text-align: left; }
+  .cierre .boton { background: var(--azul); color: #fff; }
+  .cierre .boton:hover { background: var(--azul-hondo); }
+  .cierre .alterno { margin-top: 18px; font-size: 17px; color: var(--texto-suave); }
+
+  footer {
+    background: var(--azul-hondo);
+    color: rgba(255,255,255,0.75);
+    font-size: 16px;
+    padding: 36px 0;
+  }
+  footer .nombre { color: #fff; }
+
+  @media (max-width: 480px) {
+    body { font-size: 18px; }
+    section { padding: 56px 0; }
+    .portada { padding: 40px 0 56px; }
+    .pentagrama { margin-top: 36px; }
+    .boton { width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header class="portada">
+  <div class="contenedor">
+    <p class="marca">A Primera Vista <span>con Federico Chlopecki</span></p>
+
+    <!-- Un pentagrama con notas que suben: se sale con una nota más alta que con la que se entró -->
+    <svg class="pentagrama" viewBox="0 0 640 120" role="img" aria-label="Un pentagrama con notas que suben: la primera busca un instante y después encuentra su lugar">
+      <g>
+        <line class="linea" x1="0" x2="640" y1="20" y2="20"/>
+        <line class="linea" x1="0" x2="640" y1="40" y2="40"/>
+        <line class="linea" x1="0" x2="640" y1="60" y2="60"/>
+        <line class="linea" x1="0" x2="640" y1="80" y2="80"/>
+        <line class="linea" x1="0" x2="640" y1="100" y2="100"/>
+      </g>
+      <g class="busca"><ellipse class="nota" cx="130" cy="100" rx="11" ry="8" transform="rotate(-20 130 100)"/><line class="plica" x1="140" y1="97" x2="140" y2="52"/></g>
+      <g class="sube" style="animation-delay:1.0s"><ellipse class="nota" cx="200" cy="90" rx="11" ry="8" transform="rotate(-20 200 90)"/><line class="plica" x1="210" y1="87" x2="210" y2="42"/></g>
+      <g class="sube" style="animation-delay:1.2s"><ellipse class="nota" cx="270" cy="80" rx="11" ry="8" transform="rotate(-20 270 80)"/><line class="plica" x1="280" y1="77" x2="280" y2="32"/></g>
+      <g class="sube" style="animation-delay:1.4s"><ellipse class="nota" cx="340" cy="70" rx="11" ry="8" transform="rotate(-20 340 70)"/><line class="plica" x1="350" y1="67" x2="350" y2="22"/></g>
+      <g class="sube" style="animation-delay:1.6s"><ellipse class="nota" cx="410" cy="60" rx="11" ry="8" transform="rotate(-20 410 60)"/><line class="plica" x1="400" y1="63" x2="400" y2="108"/></g>
+      <g class="sube" style="animation-delay:1.8s"><ellipse class="nota" cx="480" cy="50" rx="11" ry="8" transform="rotate(-20 480 50)"/><line class="plica" x1="470" y1="53" x2="470" y2="98"/></g>
+      <circle class="eco" cx="560" cy="40" r="11"/>
+      <g class="sube" style="animation-delay:2.0s"><g class="eureka"><ellipse class="nota" cx="560" cy="40" rx="11" ry="8" transform="rotate(-20 560 40)"/></g><line class="plica" x1="550" y1="43" x2="550" y2="88"/></g>
+    </svg>
+
+    <h1>Que la partitura te hable.</h1>
+    <p class="bajada">Lectura musical a primera vista, mano a mano con Fede.</p>
+
+    <div class="accion">
+      <a class="boton" href="https://forms.gle/28SgZAuKJDexo27U8" target="_blank" rel="noopener">Empezá por el Diagnóstico</a>
+      <p class="detalle">Completás un formulario de 3 minutos y te escribo por WhatsApp para coordinar.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <div class="contenedor">
+      <h2>¿Te pasa algo de esto?</h2>
+      <ul class="te-pasa">
+        <li>Necesitás escuchar la partitura antes de animarte.</li>
+        <li>Buscás el piano, o a alguien que te confirme si está bien.</li>
+        <li>Cantás algo que suena bien, pero no sabés si es lo que estaba escrito.</li>
+        <li>En casa leés bien, pero cuando te escuchan, no.</li>
+      </ul>
+      <p class="remate">No te falta música. Ya sabés mucho más de lo que creés: lo que falta es ordenarlo.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Cómo trabajamos</h2>
+      <p>Cada encuentro es una hora por Zoom, mano a mano. Te propongo desafíos, escucho cómo leés y te ayudo a encontrar tus propios recursos.</p>
+      <p>Esto no depende de un piano, de una grabación o de alguien que te diga si está bien o está mal.</p>
+      <p class="destacado">Vos vas a ser tu propia referencia.</p>
+      <p>Acá el error es información: nos dice por dónde seguir. Entre un encuentro y el siguiente te llevás un ejercicio corto para asentar lo que trabajamos.</p>
+      <p>Y no hace falta sentarse horas a estudiar. Lo que trabajamos se lleva a todos lados: lo podés practicar en el colectivo o mientras caminás.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Tres caminos</h2>
+
+      <div class="camino">
+        <h3>Navegar la Partitura</h3>
+        <p class="para">Para leer partituras nuevas con más confianza y recursos propios.</p>
+        <p class="como">Tres niveles de 8 encuentros. Vas a leer sin escuchar la obra antes, detectar y corregir tus propios errores, y ver cómo avanzás.</p>
+      </div>
+
+      <div class="camino">
+        <h3>Kit de Audición</h3>
+        <p class="para">Para llegar a tu audición con un plan y sabiendo qué hacer si te equivocás.</p>
+        <p class="como">Un plan semana a semana hasta tu fecha, con simulacros antes del día. Hay tres versiones, según cuánto tiempo falte.</p>
+      </div>
+
+      <div class="camino club">
+        <h3>Club de Lectura Musical</h3>
+        <p class="para">Para que no se pierda lo que ya aprendiste.</p>
+        <p class="como">Dos lecturas por mes con devolución en audio, un podcast y media hora por mes conmigo, si la querés. Es para quienes ya trabajaron conmigo.</p>
+        <a class="enlace" href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20ya%20trabaj%C3%A9%20con%20vos%20y%20quiero%20sumarme%20al%20Club%20de%20Lectura%20Musical." target="_blank" rel="noopener">Escribime para sumarte al Club</a>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Lo que dicen quienes ya trabajaron conmigo</h2>
+      <p class="cifras">Cuando les pregunté qué valoraban, dos respuestas se repitieron una y otra vez: que todo se entiende sin vueltas, y que acá te podés equivocar tranquilo, sin que nadie te juzgue.</p>
+      <p class="intro-voces">Algunos lo contaron así:</p>
+      <figure class="voz">
+        <blockquote>«La hice a primera vista.»</blockquote>
+        <figcaption>Sobre una obra coral que leyó sin piano</figcaption>
+      </figure>
+      <figure class="voz">
+        <blockquote>«Tengo una herramienta más para que el miedo no se apodere de la situación.»</blockquote>
+        <figcaption>Sobre leer con nervios</figcaption>
+      </figure>
+      <figure class="voz">
+        <blockquote>«Ya me ubico muchísimo más.»</blockquote>
+        <figcaption>Sobre el coro</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Cómo se empieza</h2>
+      <ol class="pasos">
+        <li><strong>Completás el formulario.</strong> Son 3 minutos, para conocerte un poco.</li>
+        <li><strong>Te escribo por WhatsApp</strong> y coordinamos el Diagnóstico.</li>
+        <li><strong>Hacemos el Diagnóstico.</strong> 30 minutos leyendo fragmentos cortos, de menos a más. No es un examen.</li>
+        <li><strong>Te llega la devolución escrita</strong> en 48 horas: lo que ya tenés, lo próximo para destrabar y el camino que te propongo.</li>
+      </ol>
+      <p class="bonifica">Si arrancás un nivel de Navegar la Partitura dentro de los 30 días, el Diagnóstico se te bonifica del precio final.</p>
+    </div>
+  </section>
+
+  <section class="garantia">
+    <div class="contenedor">
+      <h2>La garantía de cada nivel</h2>
+      <p class="cita">Si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.</p>
+      <p class="suave">Vale para cada nivel de Navegar la Partitura.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Soy Fede</h2>
+      <p>Empecé a estudiar música a los 11 años. Me formé en dirección orquestal y coral en la Universidad Nacional de La Plata y en Temple University, en Filadelfia.</p>
+      <p>Hace 12 años que trabajo la lectura con músicos, y de ese trabajo nació A Primera Vista.</p>
+      <p class="firma">Fede</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Preguntas frecuentes</h2>
+
+      <details class="faq">
+        <summary>¿Sirve para mi nivel?</summary>
+        <p>Sí. Aunque sientas que arrancás de cero, casi nunca es así: el conocimiento ya lo tenés, falta ordenarlo. Para ver desde dónde arrancamos está el Diagnóstico, y con eso te digo por escrito dónde estás parado.</p>
+      </details>
+
+      <details class="faq">
+        <summary>¿Y si toco un instrumento?</summary>
+        <p>También es para vos. La mayoría de los que vienen cantan, pero trabajo con músicos en general, canten o toquen.</p>
+      </details>
+
+      <details class="faq">
+        <summary>No tengo mucho tiempo para practicar. ¿Igual sirve?</summary>
+        <p>Es lo que más me dicen, y por eso lo armé así: no hace falta sentarse una hora a estudiar. Lo que trabajamos se lleva encima, unos minutos por día alcanzan. Y si una semana no llegaste, no pasa nada: arrancamos el encuentro desde ahí.</p>
+      </details>
+
+      <details class="faq">
+        <summary>¿Cómo son los encuentros?</summary>
+        <p>Por Zoom, de una hora, una vez por semana, siempre el mismo día y a la misma hora (lo elegimos juntos). No necesitás nada más que una buena conexión.</p>
+      </details>
+
+      <details class="faq">
+        <summary>¿Y si un día no puedo?</summary>
+        <p>En cada nivel podés mover hasta 2 encuentros, avisando con 24 horas.</p>
+      </details>
+
+      <details class="faq">
+        <summary>¿Cuánto sale?</summary>
+        <p>Los precios de cada propuesta están en <a href="https://agora.red/fedechl" target="_blank" rel="noopener">agora.red/fedechl</a>. Podés pagar con tarjeta o por transferencia, con 8 % de descuento.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="cierre">
+    <div class="contenedor">
+      <h2>¿Arrancamos?</h2>
+      <a class="boton" href="https://forms.gle/28SgZAuKJDexo27U8" target="_blank" rel="noopener">Empezá por el Diagnóstico</a>
+      <p class="alterno">¿Tenés una duda antes? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20vengo%20de%20la%20web%20de%20A%20Primera%20Vista." target="_blank" rel="noopener">Escribime por WhatsApp</a>.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="contenedor">
+    <p><span class="nombre">A Primera Vista</span>, con Federico Chlopecki.</p>
+    <p>WhatsApp: <a href="https://wa.me/5491178165441" target="_blank" rel="noopener">+54 9 11 7816-5441</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
