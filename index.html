@@ -200,14 +200,14 @@
   }
 
   /* Cómo se empieza: es una secuencia real */
-  .pasos { list-style: none; counter-reset: paso; margin-top: 8px; }
+  /* Todas las filas miden lo mismo que la más alta: los círculos quedan a igual distancia */
+  .pasos { list-style: none; counter-reset: paso; margin-top: 8px; display: grid; grid-auto-rows: 1fr; }
   .pasos li {
     counter-increment: paso;
     position: relative;
     min-height: 34px;
-    padding: 0 0 32px 54px;
+    padding: 0 0 24px 54px;
   }
-  .pasos li:last-child { padding-bottom: 8px; }
   /* El círculo queda centrado con la primera línea del texto (30 px de interlineado) */
   .pasos li::before {
     content: counter(paso);
