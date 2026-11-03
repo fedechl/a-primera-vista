@@ -204,20 +204,27 @@
   .pasos li {
     counter-increment: paso;
     position: relative;
-    padding: 0 0 26px 58px;
+    min-height: 34px;
+    padding: 0 0 32px 54px;
   }
+  .pasos li:last-child { padding-bottom: 8px; }
+  /* El círculo queda centrado con la primera línea del texto (30 px de interlineado) */
   .pasos li::before {
     content: counter(paso);
     position: absolute; left: 0; top: -2px;
-    width: 38px; height: 38px;
+    width: 34px; height: 34px;
     border-radius: 50%;
     border: 2px solid var(--azul);
-    display: grid; place-items: center;
-    font-weight: 600; font-size: 18px;
+    background: var(--papel);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 16px; line-height: 1;
+    font-variant-numeric: lining-nums;
+    z-index: 1;
   }
+  /* La línea une un círculo con el siguiente, sin cortes */
   .pasos li:not(:last-child)::after {
     content: "";
-    position: absolute; left: 19px; top: 40px; bottom: 4px;
+    position: absolute; left: 16px; top: 32px; bottom: -2px;
     width: 2px; background: var(--linea);
   }
   .pasos strong { font-weight: 600; }
