@@ -113,6 +113,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media (orientation:landscape) and (max-height:520px){.wrap{max-width:920px}}
 .oculto{display:none!important}
 </style>
+<style>
+.nomlab{font-weight:700;color:#fff;font-size:17px;margin-bottom:-6px}
+.nom{appearance:none;width:100%;border:2px solid var(--dorado);border-radius:12px;padding:14px 16px;font-size:18px;font-family:inherit;background:var(--hoja);color:var(--tinta)}
+.nom:focus{outline:3px solid var(--dorado);outline-offset:2px}
+.cierre .nota{font-size:15px;color:#C9D3E0;margin:0}
+.nomvivo{color:var(--azul);font-weight:700}
+.nomvivo.vacio{color:var(--suave);font-weight:400;font-style:italic;border-bottom:2px dashed var(--dorado)}
+a.btn.off{opacity:.35;pointer-events:none}
+</style>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -254,9 +264,13 @@ button{font:inherit;color:inherit;cursor:pointer}
     <div class="cierre">
       <div class="kicker" style="color:var(--dorado)">El siguiente paso</div>
       <h2 id="ctat">Mandame tus dos números y dónde cantaste otra cosa.</h2>
+      <label class="nomlab" for="nom">¿Cómo te llamás?</label>
+      <input class="nom" id="nom" type="text" autocomplete="given-name" maxlength="60" placeholder="Tu nombre">
+      <p class="nota">Va al principio del mensaje, para que Fede sepa quién le escribe.</p>
       <p>El mensaje ya está armado:</p>
       <div class="msj" id="msj" style="color:var(--tinta)"></div>
-      <a class="btn" id="wa" href="https://wa.me/5491178165441" target="_blank" rel="noopener" style="background:var(--dorado);color:var(--azul);text-align:center;text-decoration:none">Mandármelo por WhatsApp</a>
+      <a class="btn off" aria-disabled="true" id="wa" href="https://wa.me/5491178165441" target="_blank" rel="noopener" style="background:var(--dorado);color:var(--azul);text-align:center;text-decoration:none">Mandármelo por WhatsApp</a>
+      <p class="nota">Tus números le llegan a Fede. Tu grabación no sale de tu celular.</p>
     </div>
     <p class="slogan">Que la partitura te hable.</p>
     <button class="btn sec" id="otravez" style="margin-top:4px">Empezar de nuevo</button>
@@ -431,10 +445,32 @@ button{font:inherit;color:inherit;cursor:pointer}
     var ofrecer=bien && !tope && r.b>=st.a;
     $('#oferta').classList.toggle('oculto',!ofrecer);
     if(ofrecer) $('#ofertat').textContent='¿Te animás con la lectura '+(r.frag+2)+' de 4?';
-    var txt='Hola Fede, hice el autodiagnóstico. Antes me puse un '+st.a+' y al final un '+r.b+'. '+st.rondas.map(detalle).join(' ');
-    if(tope&&bien) txt+=' Me interesa saber cómo trabajás.';
-    $('#msj').textContent=txt; $('#wa').href='https://wa.me/5491178165441?text='+encodeURIComponent(txt);
+    var cuerpo='Hice el autodiagnóstico. Antes me puse un '+st.a+' y al final un '+r.b+'. '+st.rondas.map(detalle).join(' ');
+    if(tope&&bien) cuerpo+=' Me interesa saber cómo trabajás.';
+    st.envio={cuerpo:cuerpo, creia:'Creía que iba a cantar distinto '+predTxt, detalle:st.rondas.map(detalle).join(' '), b:r.b, n:st.rondas.length};
+    armar();
   }
+  // nombre en vivo + guardado (respuestas en 02 › Captación · Autodiagnóstico, vía Google Forms)
+  var FORM='https://docs.google.com/forms/d/e/1FAIpQLScMD1ooToiK1TDBUtLsFH04EXMEkGQicBO0wyu2ZdZybP8jGg/formResponse', guardadoKey=null;
+  function esc(x){return String(x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function armar(){
+    if(!st.envio) return;
+    var nom=$('#nom').value.trim(), txt='Hola, Fede! Soy '+nom+'. '+st.envio.cuerpo;
+    $('#msj').innerHTML='Hola, Fede! Soy '+(nom?'<span class="nomvivo">'+esc(nom)+'</span>':'<span class="nomvivo vacio">tu nombre</span>')+'. '+esc(st.envio.cuerpo);
+    var wa=$('#wa'); wa.href='https://wa.me/5491178165441?text='+encodeURIComponent(txt);
+    wa.classList.toggle('off',!nom); wa.setAttribute('aria-disabled',nom?'false':'true');
+    st.txt=txt; st.nom=nom;
+  }
+  function guardar(){
+    var E=st.envio, key=st.txt; if(!E||!st.nom||key===guardadoKey) return; guardadoKey=key;
+    var p=new URLSearchParams();
+    p.append('entry.1236521838',st.nom); p.append('entry.993072222',st.a); p.append('entry.2035997683',E.creia);
+    p.append('entry.1765301804',E.n); p.append('entry.758844230',E.detalle); p.append('entry.751505133',E.b); p.append('entry.1483714624',st.txt);
+    try{ if(navigator.sendBeacon&&navigator.sendBeacon(FORM,p)) return }catch(x){}
+    try{ fetch(FORM,{method:'POST',mode:'no-cors',body:p,keepalive:true}) }catch(x){}
+  }
+  $('#nom').addEventListener('input',armar);
+  $('#wa').addEventListener('click',function(e){ if(!st.nom){e.preventDefault(); $('#nom').focus(); return} guardar() });
   $('#otravez').addEventListener('click',function(){location.reload()});
 })();
 </script>
