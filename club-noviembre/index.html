@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Cómo te fue en noviembre · Club de Lectura Musical</title>
+<meta name="description" content="Cierre del primer mes del Club de Lectura Musical de A Primera Vista.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Una pregunta por pantalla, como el Autodiagnóstico: menos carga en cada paso y la barra muestra cuánto falta */
+:root{
+  --azul:#052E5E; --dorado:#CD9E34; --dorado-txt:#8A6714;
+  --papel:#F6F1E6; --hoja:#FFFDF8; --tinta:#1B2433; --suave:#5E6676; --linea:rgba(5,46,94,.14);
+  --display:"Libre Baskerville",Georgia,"Times New Roman",serif;
+  --texto:"Source Sans 3","Segoe UI",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:var(--papel);color:var(--tinta);font-family:var(--texto);font-size:18px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:560px;margin:0 auto;padding-block:20px 40px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
+.marca{font-family:var(--display);font-size:16px;color:var(--azul)}
+.marca span{color:var(--dorado-txt)}
+.prog{display:flex;gap:5px}
+.prog i{width:18px;height:4px;border-radius:2px;background:var(--linea)}
+.prog i.on{background:var(--dorado)}
+.step{display:flex;flex-direction:column;gap:18px;flex:1;animation:entra .35s ease both}
+@keyframes entra{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.step{animation:none}}
+.kicker{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dorado-txt)}
+h1,h2{font-family:var(--display);font-weight:400;color:var(--azul);margin:0;text-wrap:balance}
+h1{font-size:32px;line-height:1.2}
+h2{font-size:25px;line-height:1.25}
+p{margin:0}
+.lead{font-size:19px}
+.chico{font-size:15px;color:var(--suave)}
+.permiso{border-left:4px solid var(--dorado);padding:4px 0 4px 14px;font-size:17px}
+.filete{width:44px;height:4px;background:var(--dorado)}
+.espacio{flex:1;min-height:12px}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{appearance:none;border:0;border-radius:14px;padding:16px 20px;font-size:18px;font-weight:700;background:var(--azul);color:#fff;width:100%;transition:transform .08s,opacity .2s}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.35;cursor:default}
+.saltar{appearance:none;border:0;background:none;color:var(--azul);font-weight:600;font-size:16px;text-decoration:underline;padding:6px;align-self:center}
+.btn:focus-visible,.op:focus-visible,.check:focus-visible,.saltar:focus-visible{outline:3px solid var(--dorado);outline-offset:2px}
+.ops{display:flex;flex-direction:column;gap:8px}
+.op{appearance:none;text-align:left;border:2px solid var(--linea);background:var(--hoja);border-radius:12px;padding:14px 16px;font-size:17px;color:var(--tinta);min-height:52px}
+.op.sel{border-color:var(--azul);box-shadow:inset 0 0 0 1px var(--azul);color:var(--azul);font-weight:600}
+.check{appearance:none;display:flex;align-items:center;gap:12px;text-align:left;border:2px solid var(--linea);background:var(--hoja);border-radius:12px;padding:14px 16px;font-size:17px;width:100%;min-height:52px}
+.check .box{width:24px;height:24px;border-radius:7px;border:2px solid var(--azul);flex-shrink:0;display:grid;place-items:center;color:#fff;font-size:15px}
+.check.sel{border-color:var(--azul)}
+.check.sel .box{background:var(--azul)}
+.fecha{color:var(--suave);font-weight:400}
+textarea{width:100%;min-height:128px;resize:vertical;border:2px solid var(--linea);border-radius:12px;background:var(--hoja);padding:14px 16px;font:inherit;font-size:17px;color:var(--tinta)}
+textarea:focus{outline:3px solid var(--dorado);outline-offset:2px;border-color:var(--azul)}
+.cierre{background:var(--azul);color:#E4EAF2;border-radius:18px;padding:26px 20px;display:flex;flex-direction:column;gap:14px}
+.cierre h2{color:#fff}
+.slogan{font-family:var(--display);font-style:italic;color:var(--dorado);font-size:18px}
+.firma{font-family:var(--display);color:#fff;font-size:18px}
+.oculto{display:none!important}
+</style>
+<script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="marca">A Primera <span>Vista</span></div>
+    <div class="prog" id="prog" aria-hidden="true"></div>
+  </header>
+
+  <!-- 0 · Bienvenida -->
+  <section class="step" data-step="0">
+    <div class="filete"></div>
+    <div class="kicker">Club de Lectura Musical</div>
+    <h1>Cómo te fue en noviembre</h1>
+    <p class="lead">Fueron cuatro viernes de Club y lo armé pensando en vos. Con lo que me cuentes decido cómo sigue.</p>
+    <p class="chico">Son 6 preguntas, unos 2 minutos.</p>
+    <div class="espacio"></div>
+    <button class="btn" data-ir="1">Empezar</button>
+  </section>
+
+  <!-- 1 · Qué le sirvió -->
+  <section class="step oculto" data-step="1">
+    <div class="kicker">1 de 6</div>
+    <h2>¿Qué te sirvió más?</h2>
+    <p class="chico">Podés marcar varias.</p>
+    <div class="ops" id="q1">
+      <button type="button" class="check" aria-pressed="false" data-v="La lectura del 6/11"><span class="box">✓</span><span>La lectura <span class="fecha">del 6/11</span></span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="El podcast del 13/11"><span class="box">✓</span><span>El podcast <span class="fecha">del 13/11</span></span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="La lectura del 20/11"><span class="box">✓</span><span>La lectura <span class="fecha">del 20/11</span></span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="La devolución en audio"><span class="box">✓</span><span>La devolución en audio</span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="El encuentro de 30 minutos"><span class="box">✓</span><span>El encuentro de 30 minutos</span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="Tener una práctica fija cada semana"><span class="box">✓</span><span>Tener una práctica fija cada semana</span></button>
+    </div>
+    <div class="espacio"></div>
+    <button class="btn" id="go1" disabled>Seguir</button>
+  </section>
+
+  <!-- 2 · Lecturas hechas -->
+  <section class="step oculto" data-step="2">
+    <div class="kicker">2 de 6</div>
+    <h2>¿Cuántas lecturas pudiste hacer?</h2>
+    <p class="permiso">Es normal no llegar a todo: me sirve saber qué pasó, no es una evaluación.</p>
+    <div class="ops" id="q2">
+      <button type="button" class="op" data-v="Las dos">Las dos</button>
+      <button type="button" class="op" data-v="Una">Una</button>
+      <button type="button" class="op" data-v="Ninguna">Ninguna</button>
+    </div>
+    <div class="espacio"></div>
+    <button class="btn" id="go2" disabled>Seguir</button>
+  </section>
+
+  <!-- 3 · Qué se cruzó (solo si no hizo las dos) -->
+  <section class="step oculto" data-step="3">
+    <div class="kicker">2 de 6</div>
+    <h2>¿Qué se cruzó?</h2>
+    <p class="chico">Podés marcar varias, o ninguna.</p>
+    <div class="ops" id="q3">
+      <button type="button" class="check" aria-pressed="false" data-v="Me faltó tiempo"><span class="box">✓</span><span>Me faltó tiempo</span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="No me quedó claro qué hacer"><span class="box">✓</span><span>No me quedó claro qué hacer</span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="Me costó grabarme"><span class="box">✓</span><span>Me costó grabarme</span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="Se me pasó"><span class="box">✓</span><span>Se me pasó</span></button>
+      <button type="button" class="check" aria-pressed="false" data-v="Otra cosa"><span class="box">✓</span><span>Otra cosa</span></button>
+    </div>
+    <div class="espacio"></div>
+    <button class="btn" data-ir="4">Seguir</button>
+  </section>
+
+  <!-- 4 · Dificultad -->
+  <section class="step oculto" data-step="4">
+    <div class="kicker">3 de 6</div>
+    <h2>Las lecturas te resultaron…</h2>
+    <div class="ops" id="q4">
+      <button type="button" class="op" data-v="Fáciles">Fáciles</button>
+      <button type="button" class="op" data-v="Justas">Justas</button>
+      <button type="button" class="op" data-v="Difíciles">Difíciles</button>
+    </div>
+    <div class="espacio"></div>
+    <button class="btn" id="go4" disabled>Seguir</button>
+  </section>
+
+  <!-- 5 · Qué se lleva -->
+  <section class="step oculto" data-step="5">
+    <div class="kicker">4 de 6</div>
+    <h2>Contame una cosa que te llevás de este mes.</h2>
+    <label class="chico" for="q5">Con tus palabras, como te salga.</label>
+    <textarea id="q5" maxlength="1500"></textarea>
+    <div class="espacio"></div>
+    <button class="btn" id="go5" disabled>Seguir</button>
+  </section>
+
+  <!-- 6 · Qué cambiaría -->
+  <section class="step oculto" data-step="6">
+    <div class="kicker">5 de 6</div>
+    <h2>Si pudieras cambiar una sola cosa, ¿cuál sería?</h2>
+    <label class="chico" for="q6">Si no cambiarías nada, seguí de largo.</label>
+    <textarea id="q6" maxlength="1500"></textarea>
+    <div class="espacio"></div>
+    <button class="btn" data-ir="7">Seguir</button>
+  </section>
+
+  <!-- 7 · Seguiría -->
+  <section class="step oculto" data-step="7">
+    <div class="kicker">6 de 6</div>
+    <h2>¿Te gustaría seguir en diciembre?</h2>
+    <div class="ops" id="q7">
+      <button type="button" class="op" data-v="Sí">Sí</button>
+      <button type="button" class="op" data-v="Tal vez">Tal vez</button>
+      <button type="button" class="op" data-v="No">No</button>
+    </div>
+    <div class="espacio"></div>
+    <button class="btn" id="enviar" disabled>Enviar</button>
+  </section>
+
+  <!-- 8 · Gracias -->
+  <section class="step oculto" data-step="8">
+    <div class="cierre">
+      <h2>Gracias.</h2>
+      <p>Lo leo con calma y te escribo.</p>
+      <p class="slogan">Que la partitura te hable.</p>
+      <p class="firma">Fede</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  // Respuestas a 02 › «Club · Beta · Respuestas», vía el formulario oculto «APV · Club · Cierre de noviembre (respuestas de la web)»
+  var FORM='https://docs.google.com/forms/d/e/1FAIpQLSfEm1yTzNb-MrZEVCFCitMb7g-8ZpSKPKePPHEB7iKjIeLo5g/formResponse';
+  var E={codigo:'entry.2113574804',sirvio:'entry.1087320238',lecturas:'entry.124808770',cruzo:'entry.1903608984',dificultad:'entry.1833790217',lleva:'entry.882973987',cambiaria:'entry.1519844401',seguiria:'entry.1078202953'};
+  var $=function(s){return document.querySelector(s)}, $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+  var m=/[?&]c=([a-z0-9]{4,12})(?:&|$)/i.exec(location.search), codigo=m?m[1].toLowerCase():'';
+  var st={sirvio:[],lecturas:'',cruzo:[],dificultad:'',seguiria:''}, actual=0, enviado=false;
+  var PASOS=8, prog=$('#prog'); for(var i=0;i<PASOS;i++){prog.appendChild(document.createElement('i'))}
+  function ir(n){
+    if(n===3 && st.lecturas==='Las dos') n=4;
+    actual=n;
+    $$('.step').forEach(function(s){s.classList.toggle('oculto',+s.dataset.step!==n)});
+    $$('#prog i').forEach(function(d,k){d.classList.toggle('on',k<=n)});
+    window.scrollTo(0,0);
+    var t=$('.step[data-step="'+n+'"] textarea'); if(t) setTimeout(function(){t.focus()},350);
+  }
+  $$('[data-ir]').forEach(function(b){b.addEventListener('click',function(){ir(+b.dataset.ir)})});
+  function multiple(sel,key,boton){
+    $$(sel+' .check').forEach(function(b){b.addEventListener('click',function(){
+      var v=b.dataset.v, i=st[key].indexOf(v);
+      if(i<0) st[key].push(v); else st[key].splice(i,1);
+      b.classList.toggle('sel',i<0); b.setAttribute('aria-pressed',i<0?'true':'false');
+      if(boton) $(boton).disabled=st[key].length===0;
+    })});
+  }
+  function unica(sel,key,boton){
+    $$(sel+' .op').forEach(function(b){b.addEventListener('click',function(){
+      st[key]=b.dataset.v;
+      $$(sel+' .op').forEach(function(x){x.classList.toggle('sel',x===b); x.setAttribute('aria-pressed',x===b?'true':'false')});
+      $(boton).disabled=false;
+    })});
+  }
+  multiple('#q1','sirvio','#go1'); multiple('#q3','cruzo',null);
+  unica('#q2','lecturas','#go2'); unica('#q4','dificultad','#go4'); unica('#q7','seguiria','#enviar');
+  $('#go1').addEventListener('click',function(){ir(2)});
+  $('#go2').addEventListener('click',function(){ if(st.lecturas==='Las dos') st.cruzo=[]; ir(3)});
+  $('#go4').addEventListener('click',function(){ir(5)});
+  $('#q5').addEventListener('input',function(){ $('#go5').disabled=this.value.trim().length<2 });
+  $('#go5').addEventListener('click',function(){ir(6)});
+  $('#enviar').addEventListener('click',function(){
+    if(enviado) return; enviado=true;
+    var p=new URLSearchParams();
+    p.append(E.codigo,codigo); p.append(E.sirvio,st.sirvio.join(' · ')); p.append(E.lecturas,st.lecturas);
+    p.append(E.cruzo,st.cruzo.join(' · ')); p.append(E.dificultad,st.dificultad);
+    p.append(E.lleva,$('#q5').value.trim()); p.append(E.cambiaria,$('#q6').value.trim()); p.append(E.seguiria,st.seguiria);
+    var ok=false; try{ ok=!!(navigator.sendBeacon&&navigator.sendBeacon(FORM,p)) }catch(x){}
+    if(!ok){ try{ fetch(FORM,{method:'POST',mode:'no-cors',body:p,keepalive:true}) }catch(x){} }
+    ir(8);
+  });
+})();
+</script>
+</body>
+</html>
