@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kit de Audición · A Primera Vista</title>
+<meta name="description" content="Para llegar a tu audición con un plan y sabiendo qué hacer si te equivocás. Lectura a primera vista, mano a mano con Fede.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://aprimeravista.vercel.app/kit">
+<meta property="og:title" content="Kit de Audición · A Primera Vista">
+<meta property="og:description" content="Para llegar a tu audición con un plan y sabiendo qué hacer si te equivocás.">
+<meta property="og:image" content="https://aprimeravista.vercel.app/kit/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  /* Misma piel que la web principal: azul y dorado, Spectral, una columna para celular */
+  :root {
+    --azul: #052E5E;
+    --azul-hondo: #031F41;
+    --dorado: #CD9E34;
+    --dorado-claro: #E4C278;
+    --papel: #F5F7FA;
+    --linea: #D6DDE7;
+    --texto: #052E5E;
+    --texto-suave: #3D5576;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--papel);
+    color: var(--texto);
+    font-family: "Spectral", Georgia, serif;
+    font-size: 19px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--dorado); outline-offset: 3px; border-radius: 2px; }
+  .contenedor { width: 100%; max-width: 680px; margin: 0 auto; padding: 0 20px; }
+
+  /* Portada */
+  .portada { background: var(--azul); color: #fff; padding: 40px 0 64px; }
+  .marca { font-size: 17px; color: var(--dorado-claro); text-decoration: none; }
+  .marca span { color: rgba(255,255,255,0.7); }
+  .calendario { display: block; width: 56px; height: 56px; margin: 40px 0 18px; fill: none; stroke: var(--dorado); stroke-width: 2.2; stroke-linecap: round; }
+  .calendario .lleno { fill: var(--dorado); stroke: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .calendario .lleno { transform-box: fill-box; transform-origin: center; animation: late 1.6s ease-in-out 0.6s 2; }
+    @keyframes late { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.35); } }
+  }
+  h1 { font-weight: 500; font-size: clamp(44px, 10vw, 72px); line-height: 1.04; letter-spacing: -0.015em; }
+  .lema { font-style: italic; font-size: clamp(24px, 5vw, 32px); line-height: 1.25; color: var(--dorado-claro); margin-top: 20px; max-width: 24ch; }
+  .accion { margin-top: 32px; }
+  .boton {
+    display: inline-block;
+    background: var(--dorado);
+    color: var(--azul-hondo);
+    font-family: inherit;
+    font-size: 19px;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 15px 28px;
+    border-radius: 999px;
+    transition: background-color .15s ease;
+  }
+  .boton:hover { background: var(--dorado-claro); }
+  .detalle { font-size: 16px; color: rgba(255,255,255,0.75); margin-top: 12px; max-width: 38ch; }
+
+  /* Secciones */
+  section { padding: 64px 0; }
+  section + section { border-top: 1px solid var(--linea); }
+  h2 { font-weight: 500; font-size: clamp(28px, 5vw, 36px); line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 22px; }
+  p + p { margin-top: 16px; }
+  .voz { font-style: italic; color: var(--texto-suave); border-left: 3px solid var(--dorado); padding: 4px 0 4px 18px; margin: 20px 0; }
+  .remate { font-size: 22px; line-height: 1.45; }
+
+  .momentos { list-style: none; margin-top: 8px; }
+  .momentos li { padding: 14px 0 14px 34px; position: relative; border-bottom: 1px solid var(--linea); }
+  .momentos li::before {
+    content: ""; position: absolute; left: 4px; top: 25px;
+    width: 13px; height: 10px; border-radius: 50%;
+    background: var(--dorado); transform: rotate(-20deg);
+  }
+
+  .versiones { margin-top: 8px; }
+  .version { padding: 22px 0 22px 22px; border-left: 3px solid var(--dorado); }
+  .version + .version { margin-top: 16px; }
+  .version .cuando { font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-suave); }
+  .version h3 { font-weight: 600; font-size: 24px; line-height: 1.25; margin-top: 2px; }
+  .version p { color: var(--texto-suave); margin-top: 6px; }
+  .no-elegir { margin-top: 28px; font-size: 22px; line-height: 1.4; font-weight: 600; }
+  .en-los-tres { margin-top: 16px; }
+
+  .cierre { background: var(--azul); color: #fff; }
+  .cierre h2 { color: #fff; }
+  .cierre .alterno { margin-top: 20px; font-size: 17px; color: rgba(255,255,255,0.75); }
+
+  footer { background: var(--azul-hondo); color: rgba(255,255,255,0.75); font-size: 16px; padding: 32px 0; }
+  footer .nombre { color: #fff; }
+  footer p + p { margin-top: 6px; }
+
+  @media (max-width: 480px) {
+    body { font-size: 18px; }
+    section { padding: 52px 0; }
+    .boton { width: 100%; text-align: center; }
+  }
+</style>
+<script defer src="/_vercel/insights/script.js"></script>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+</head>
+<body>
+
+<header class="portada">
+  <div class="contenedor">
+    <a class="marca" href="/">A Primera Vista <span>· con Federico Chlopecki</span></a>
+
+    <!-- El calendario con la fecha marcada: el punto late, como el día que se acerca -->
+    <svg class="calendario" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="32" rx="4"/><path d="M6 19h36M16 5v9M32 5v9"/><circle class="lleno" cx="31" cy="31" r="5"/></svg>
+
+    <h1>Kit de Audición</h1>
+    <p class="lema">Para llegar a tu audición con un plan y sabiendo qué hacer si te equivocás.</p>
+
+    <div class="accion">
+      <a class="boton" href="https://forms.gle/92ibjK9bqBvCEAfe8" target="_blank" rel="noopener">Contame de tu audición</a>
+      <p class="detalle">3 preguntas. Hoy mismo te respondo con una propuesta para tu fecha.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <div class="contenedor">
+      <h2>¿Te pasa esto?</h2>
+      <p>Cuando te ponen una partitura adelante y te están escuchando, de golpe sentís que no sabés leer. Y la cabeza arranca:</p>
+      <p class="voz">¿Por dónde empiezo? ¿Y si me equivoco?</p>
+      <p class="remate">Le pasa a muchos músicos. No es falta de música: es que nadie te dio un plan para ese momento.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Lo que buscamos</h2>
+      <p>Que ese día llegues con la tranquilidad de saber que podés. Sin depender de la suerte ni de que alguien de afuera te diga si estuvo bien, y sabiendo cómo seguir si te equivocás.</p>
+      <p>Para eso vas a tener un plan para cada momento:</p>
+      <ul class="momentos">
+        <li>Los primeros segundos con la partitura.</li>
+        <li>Si te perdés.</li>
+        <li>Los nervios.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="contenedor">
+      <h2>Según cuánto falte</h2>
+      <div class="versiones">
+        <div class="version">
+          <p class="cuando">De 3 a 7 semanas</p>
+          <h3>Express</h3>
+          <p>Intensivo: cada semana, un encuentro para ordenar tu lectura y un simulacro de audición para ponerla a prueba bajo presión.</p>
+        </div>
+        <div class="version">
+          <p class="cuando">De 8 a 11 semanas</p>
+          <h3>Calma</h3>
+          <p>En dos tiempos. Las primeras 4 semanas, un encuentro por semana para ordenar tu lectura. En las últimas 4 sumamos un simulacro de audición por semana.</p>
+        </div>
+        <div class="version">
+          <p class="cuando">12 semanas o más</p>
+          <h3>Puente</h3>
+          <p>Tiempo para que lo que trabajemos se vuelva tuyo: no una preparación para un día, sino una forma de leer. 8 semanas de encuentros y, en las últimas 4, un simulacro por semana.</p>
+        </div>
+      </div>
+      <p class="no-elegir">No tenés que elegir: con tu fecha te digo cuál va.</p>
+      <p class="en-los-tres">En los tres hay ejercicios cortos entre encuentro y encuentro, con mi devolución en audio. Y después de la audición nos volvemos a ver para repasar cómo te fue, salga como salga.</p>
+    </div>
+  </section>
+
+  <section class="cierre">
+    <div class="contenedor">
+      <h2>¿Cuándo es tu audición?</h2>
+      <a class="boton" href="https://forms.gle/92ibjK9bqBvCEAfe8" target="_blank" rel="noopener">Contame de tu audición</a>
+      <p class="alterno">¿Preferís escribirme? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20tengo%20una%20audici%C3%B3n%20y%20quiero%20saber%20del%20Kit." target="_blank" rel="noopener">Hablemos por WhatsApp</a>.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="contenedor">
+    <p><span class="nombre">A Primera Vista</span>, con Federico Chlopecki.</p>
+    <p>WhatsApp: <a href="https://wa.me/5491178165441" target="_blank" rel="noopener">+54 9 11 7816-5441</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
