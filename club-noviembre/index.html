@@ -56,6 +56,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .check.sel .box{background:var(--azul)}
 .fecha{color:var(--suave);font-weight:400}
 textarea{width:100%;min-height:128px;resize:vertical;border:2px solid var(--linea);border-radius:12px;background:var(--hoja);padding:14px 16px;font:inherit;font-size:17px;color:var(--tinta)}
+input.monto{width:100%;border:2px solid var(--linea);border-radius:12px;background:var(--hoja);padding:14px 16px;font:inherit;font-size:20px;color:var(--tinta)}
+input.monto:focus{outline:3px solid var(--dorado);outline-offset:2px;border-color:var(--azul)}
 textarea:focus{outline:3px solid var(--dorado);outline-offset:2px;border-color:var(--azul)}
 .cierre{background:var(--azul);color:#E4EAF2;border-radius:18px;padding:26px 20px;display:flex;flex-direction:column;gap:14px}
 .cierre h2{color:#fff}
@@ -179,8 +181,28 @@ textarea:focus{outline:3px solid var(--dorado);outline-offset:2px;border-color:v
     <button class="btn" id="enviar" disabled>Enviar</button>
   </section>
 
-  <!-- 8 · Gracias -->
+  <!-- 8 · Precio justo (solo si contestó Sí o Tal vez) -->
   <section class="step oculto" data-step="8">
+    <div class="kicker">Una más</div>
+    <h2>¿Cuánto te parecería justo pagar por mes por el Club, tal como lo viviste?</h2>
+    <label class="chico" for="q8">Un número aproximado, sin pensarlo mucho.</label>
+    <input class="monto" id="q8" type="text" inputmode="numeric" autocomplete="off" placeholder="$">
+    <div class="espacio"></div>
+    <button class="btn" id="go8" disabled>Seguir</button>
+  </section>
+
+  <!-- 9 · Precio caro -->
+  <section class="step oculto" data-step="9">
+    <div class="kicker">Última</div>
+    <h2>¿Y a partir de cuánto te empezaría a parecer caro?</h2>
+    <label class="chico" for="q9">También aproximado.</label>
+    <input class="monto" id="q9" type="text" inputmode="numeric" autocomplete="off" placeholder="$">
+    <div class="espacio"></div>
+    <button class="btn" id="go9" disabled>Enviar</button>
+  </section>
+
+  <!-- 10 · Gracias -->
+  <section class="step oculto" data-step="10">
     <div class="cierre">
       <h2>Gracias.</h2>
       <p>Lo leo con calma y te escribo.</p>
@@ -194,18 +216,18 @@ textarea:focus{outline:3px solid var(--dorado);outline-offset:2px;border-color:v
 (function(){
   // Respuestas a 02 › «Club · Beta · Respuestas», vía el formulario oculto «APV · Club · Cierre de noviembre (respuestas de la web)»
   var FORM='https://docs.google.com/forms/d/e/1FAIpQLSfEm1yTzNb-MrZEVCFCitMb7g-8ZpSKPKePPHEB7iKjIeLo5g/formResponse';
-  var E={codigo:'entry.2113574804',sirvio:'entry.1087320238',lecturas:'entry.124808770',cruzo:'entry.1903608984',dificultad:'entry.1833790217',lleva:'entry.882973987',cambiaria:'entry.1519844401',seguiria:'entry.1078202953'};
+  var E={codigo:'entry.2113574804',sirvio:'entry.1087320238',lecturas:'entry.124808770',cruzo:'entry.1903608984',dificultad:'entry.1833790217',lleva:'entry.882973987',cambiaria:'entry.1519844401',seguiria:'entry.1078202953',justo:'entry.961677670',caro:'entry.1520785887'};
   var $=function(s){return document.querySelector(s)}, $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
   var m=/[?&]c=([a-z0-9]{4,12})(?:&|$)/i.exec(location.search), codigo=m?m[1].toLowerCase():'';
   var st={sirvio:[],lecturas:'',cruzo:[],dificultad:'',seguiria:''}, actual=0, enviado=false;
-  var PASOS=8, prog=$('#prog'); for(var i=0;i<PASOS;i++){prog.appendChild(document.createElement('i'))}
+  var PASOS=10, prog=$('#prog'); for(var i=0;i<PASOS;i++){prog.appendChild(document.createElement('i'))}
   function ir(n){
     if(n===3 && st.lecturas==='Las dos') n=4;
     actual=n;
     $$('.step').forEach(function(s){s.classList.toggle('oculto',+s.dataset.step!==n)});
     $$('#prog i').forEach(function(d,k){d.classList.toggle('on',k<=n)});
     window.scrollTo(0,0);
-    var t=$('.step[data-step="'+n+'"] textarea'); if(t) setTimeout(function(){t.focus()},350);
+    var t=$('.step[data-step="'+n+'"] textarea, .step[data-step="'+n+'"] input'); if(t) setTimeout(function(){t.focus()},350);
   }
   $$('[data-ir]').forEach(function(b){b.addEventListener('click',function(){ir(+b.dataset.ir)})});
   function multiple(sel,key,boton){
@@ -230,16 +252,30 @@ textarea:focus{outline:3px solid var(--dorado);outline-offset:2px;border-color:v
   $('#go4').addEventListener('click',function(){ir(5)});
   $('#q5').addEventListener('input',function(){ $('#go5').disabled=this.value.trim().length<2 });
   $('#go5').addEventListener('click',function(){ir(6)});
-  $('#enviar').addEventListener('click',function(){
+  function sigue(){ return st.seguiria==='Sí'||st.seguiria==='Tal vez' }
+  $$('#q7 .op').forEach(function(b){b.addEventListener('click',function(){ $('#enviar').textContent=sigue()?'Seguir':'Enviar' })});
+  function monto(id,boton){
+    $(id).addEventListener('input',function(){
+      var d=this.value.replace(/[^0-9]/g,'');
+      this.value=d?'$'+(+d).toLocaleString('es-AR'):'';
+      $(boton).disabled=!d;
+    });
+  }
+  monto('#q8','#go8'); monto('#q9','#go9');
+  function enviar(){
     if(enviado) return; enviado=true;
     var p=new URLSearchParams();
     p.append(E.codigo,codigo); p.append(E.sirvio,st.sirvio.join(' · ')); p.append(E.lecturas,st.lecturas);
     p.append(E.cruzo,st.cruzo.join(' · ')); p.append(E.dificultad,st.dificultad);
     p.append(E.lleva,$('#q5').value.trim()); p.append(E.cambiaria,$('#q6').value.trim()); p.append(E.seguiria,st.seguiria);
+    if(sigue()){ p.append(E.justo,$('#q8').value.replace(/[^0-9]/g,'')); p.append(E.caro,$('#q9').value.replace(/[^0-9]/g,'')) }
     var ok=false; try{ ok=!!(navigator.sendBeacon&&navigator.sendBeacon(FORM,p)) }catch(x){}
     if(!ok){ try{ fetch(FORM,{method:'POST',mode:'no-cors',body:p,keepalive:true}) }catch(x){} }
-    ir(8);
-  });
+    ir(10);
+  }
+  $('#enviar').addEventListener('click',function(){ if(sigue()) ir(8); else enviar() });
+  $('#go8').addEventListener('click',function(){ir(9)});
+  $('#go9').addEventListener('click',enviar);
 })();
 </script>
 </body>
