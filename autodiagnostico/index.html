@@ -469,6 +469,7 @@ a.btn.off{opacity:.35;pointer-events:none}
     var p=new URLSearchParams();
     p.append('entry.1236521838',st.nom); p.append('entry.993072222',st.a); p.append('entry.2035997683',E.creia);
     p.append('entry.1765301804',E.n); p.append('entry.758844230',E.detalle); p.append('entry.751505133',E.b); p.append('entry.1483714624',st.txt);
+    var org=''; try{ org=(new URLSearchParams(location.search).get('o')||'').toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,30) }catch(x){} if(org) p.append('entry.1899920028',org);
     try{ if(navigator.sendBeacon&&navigator.sendBeacon(FORM,p)) return }catch(x){}
     try{ fetch(FORM,{method:'POST',mode:'no-cors',body:p,keepalive:true}) }catch(x){}
   }
