@@ -122,7 +122,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .nomvivo.vacio{color:var(--suave);font-weight:400;font-style:italic;border-bottom:2px dashed var(--dorado)}
 a.btn.off{opacity:.35;pointer-events:none}
 </style>
-<script defer src="/_vercel/insights/script.js"></script>
+<script>/* ?o=prueba...: modo prueba, no cuenta la visita en Vercel ni guarda respuestas */
+window.APV_PRUEBA=(function(){try{return /^prueba/.test((new URLSearchParams(location.search).get('o')||'').toLowerCase())}catch(x){return false}})();
+if(!window.APV_PRUEBA){var s=document.createElement('script');s.defer=true;s.src='/_vercel/insights/script.js';document.head.appendChild(s)}</script>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -465,6 +467,7 @@ a.btn.off{opacity:.35;pointer-events:none}
     st.txt=txt; st.nom=nom;
   }
   function guardar(){
+    if(window.APV_PRUEBA) return;
     var E=st.envio, key=st.txt; if(!E||!st.nom||key===guardadoKey) return; guardadoKey=key;
     var p=new URLSearchParams();
     p.append('entry.1236521838',st.nom); p.append('entry.993072222',st.a); p.append('entry.2035997683',E.creia);
