@@ -475,7 +475,7 @@ function pedirAcceso(b) {
   if (habilitado(b).ok) return { ok: true, yaEsta: true };
   enviar(c.avisos, 'Pedido de acceso al Nivel ' + nivel + ' · ' + b.nombre,
     '<p>' + b.nombre + ' (' + b.email + ') quiere reservar el Nivel ' + nivel + ' de Navegar la Partitura y la web no encuentra su Nivel ' + (nivel - 1) +
-    ' (seguramente lo hizo antes de la web, por Ágora).</p><p>Si corresponde, tocá acá y le llega un mail para reservar: <a href="' + b.habilitarUrl + '">habilitar el Nivel ' + nivel + '</a>.</p>' +
+    ' (seguramente lo hizo antes de que existiera la página de reservas).</p><p>Si corresponde, tocá acá y le llega un mail para reservar: <a href="' + b.habilitarUrl + '">habilitar el Nivel ' + nivel + '</a>.</p>' +
     '<p>Si no corresponde, no hagas nada.</p>');
   return { ok: true };
 }
@@ -692,11 +692,13 @@ function mailMusicoConfirmada(r, ses, c, verUrl) {
 // A Muse le llega el aviso de la venta, ya cargada en Ventas, para que sume la ficha del músico.
 function mailMuse(r, ses, pago, c, fila) {
   var para = [c.muse, c.avisos].filter(String).join(',');
-  var bienvenida = /^nivel-|^kit-/.test(r.producto) ? '<p>Es un recorrido nuevo: seguí el onboarding de siempre (kit de bienvenida y videos), igual que con las reservas de Agora.</p>' : '';
+  var bienvenida = /^nivel-|^kit-/.test(r.producto) ? '<p>Es un recorrido nuevo: seguí el onboarding de siempre (kit de bienvenida y videos).</p>' : '';
   enviar(para, 'Venta web · ' + r.productoNombre + ' · ' + r.nombre,
     '<p>Venta nueva desde leeraprimeravista.com (T43). ' + (fila
-      ? 'Ya quedó cargada en 02 · Métricas › Ventas, fila ' + fila + ' (Cargó = Web). Muse: no la cargues de nuevo; sumá o actualizá la ficha del músico y revisá el Origen.'
-      : 'No se pudo cargar sola en 02 · Métricas › Ventas: Muse, cargala vos con estos datos.') + '</p>' + bienvenida +
+      ? 'Ya quedó cargada en 02 · Métricas › Ventas, fila ' + fila + ' (Cargó = Web).'
+      : 'No se pudo cargar sola en 02 · Métricas › Ventas.') +
+      ' Muse: no la cargues ni crees la ficha (la crea Session Analytics). Si el músico ya tiene ficha, completá solo su Mail.' +
+      (fila ? '' : ' Como no se cargó, pasásela al GM con «DE MUSE PARA APV GM | Venta | ' + r.nombre + '» con estos datos.') + '</p>' + bienvenida +
     '<p>Músico: ' + r.nombre + '<br>Producto: ' + r.productoNombre + '<br>' +
     'Pago: Contado · ' + textoPago(r, pago) + (pago.neto ? ' (neto acreditado por MP: ' + pesos(pago.neto) + ')' : '') + '<br>' +
     (ses.length > 1 ? 'Sesiones: ' + ses.map(function (x) { return etiqueta(x) + ' ' + fechaLarga(new Date(x.inicio)); }).join(' · ') : 'Encuentro: ' + fechaLarga(new Date(ses[0].inicio))) +
