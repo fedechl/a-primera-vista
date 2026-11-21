@@ -32,6 +32,7 @@
   .marca span { color: rgba(255,255,255,0.7); }
   h1 { font-weight: 500; font-size: clamp(36px, 8vw, 54px); line-height: 1.08; letter-spacing: -0.015em; margin-top: 28px; }
   .bajada { color: rgba(255,255,255,0.8); margin-top: 12px; max-width: 40ch; }
+  .idea { font-style: italic; color: var(--dorado-claro); margin-top: 14px; max-width: 34ch; }
   main { padding: 36px 0 64px; }
   h2 { font-weight: 500; font-size: 26px; line-height: 1.2; margin: 32px 0 18px; }
   h2:first-child { margin-top: 0; }
@@ -82,6 +83,13 @@
   .boton:hover { background: var(--dorado-claro); }
   .boton[disabled] { opacity: .6; cursor: wait; }
   .error { color: var(--error); font-size: 17px; }
+  .despues { background: #fff; border: 1px solid var(--linea); border-radius: 6px; padding: 14px 16px; font-size: 16px; }
+  .despues-titulo { font-weight: 600; margin-bottom: 4px; }
+  .despues ul { list-style: none; }
+  .despues li { padding-left: 18px; position: relative; color: var(--texto-suave); }
+  .despues li + li { margin-top: 4px; }
+  .despues li::before { content: ""; position: absolute; left: 2px; top: 11px; width: 7px; height: 5px; border-radius: 50%; background: var(--dorado); transform: rotate(-20deg); }
+  .duda { font-size: 16px; color: var(--texto-suave); margin-top: 22px; }
   .caja { background: #fff; border: 1px solid var(--linea); border-left: 3px solid var(--dorado); border-radius: 6px; padding: 18px 20px; }
   .caja p + p { margin-top: 10px; }
   .dato { font-weight: 600; user-select: all; }
@@ -101,6 +109,7 @@
     <a class="marca" href="/">A Primera Vista <span>· con Fede Chlopecki</span></a>
     <h1 id="titulo">Reservá tu horario</h1>
     <p class="bajada" id="bajada">Elegí el día y la hora. Todos los encuentros son por Zoom, en hora de Argentina.</p>
+    <p class="idea">Ya sabés más de lo que creés: falta ordenarlo.</p>
   </div>
 </header>
 
@@ -114,15 +123,16 @@
       <div class="opciones">
         <a class="opcion" href="?p=diagnostico">
           <h3>Diagnóstico</h3>
-          <p>30 minutos por Zoom: fragmentos cortos, de menos a más, y después una devolución escrita.</p>
-          <p class="precio">$54.400 · $50.048 por transferencia</p>
+          <p>En 30 minutos vemos cómo leés hoy y te llevás por escrito qué te conviene trabajar.</p>
+          <p class="precio">$54.400 · $50.048 con descuento por transferencia</p>
         </a>
         <a class="opcion" href="?p=encuentro-a-medida">
           <h3>Encuentro a medida</h3>
-          <p>1 hora por Zoom, con preparación previa con tu material, grabación, devolución escrita y prioridad de agenda.</p>
-          <p class="precio">$99.000 · $91.080 por transferencia</p>
+          <p>Una hora sobre lo que vos necesitás, preparada antes con tu material. Te llevás la grabación y una devolución escrita.</p>
+          <p class="precio">$99.000 · $91.080 con descuento por transferencia</p>
         </a>
       </div>
+      <p class="duda">¿Tenés una duda antes? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20tengo%20una%20duda%20antes%20de%20reservar.">Escribime</a>.</p>
     </section>
 
     <!-- 2 · Día y hora -->
@@ -152,7 +162,7 @@
           </div>
           <span class="ayuda" id="ayuda-tel">Código de área sin el 0, y el número sin el 15.</span>
         </div>
-        <label>¿Cómo te enteraste? <select name="origen">
+        <label>¿Cómo te enteraste? <span class="suave">(opcional)</span> <select name="origen">
           <option value="">Elegí una opción</option><option>Recomendación</option><option>Instagram</option><option>YouTube</option>
           <option>Flyer</option><option>Grupo de músicos o coro</option><option>Google</option><option>Ya trabajé con Fede</option><option>Otro</option>
         </select></label>
@@ -163,9 +173,18 @@
           <label class="medio"><input type="radio" name="medio" value="transferencia"><span><span class="monto" id="monto-transferencia"></span><span class="nota">Con 8 % de descuento por transferencia. Te guardo el turno hasta que llegue el comprobante.</span></span></label>
         </fieldset>
         <p class="suave" id="texto-sena" hidden></p>
+        <p class="suave" id="texto-credito" hidden></p>
+        <div class="despues">
+          <p class="despues-titulo">Qué pasa después</p>
+          <ul>
+            <li>Te llega un mail con el link de Zoom y la invitación a tu calendario.</li>
+            <li>Si necesitás mover el horario, lo hacés vos desde ese mail, con 24 h de aviso.</li>
+            <li id="despues-extra"></li>
+          </ul>
+        </div>
         <p class="error" id="error-form" hidden></p>
         <button class="boton" id="enviar" type="submit">Reservar</button>
-        <p class="suave">Si necesitás mover el horario, lo podés hacer vos desde el mail de confirmación, con 24 h de anticipación.</p>
+        <p class="duda">¿Tenés una duda antes? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20tengo%20una%20duda%20antes%20de%20reservar.">Escribime</a>.</p>
       </form>
     </section>
 
@@ -176,13 +195,22 @@
   </div>
 </main>
 
-<footer><div class="contenedor"><p>A Primera Vista · con Fede Chlopecki</p></div></footer>
+<footer><div class="contenedor"><p>A Primera Vista</p><p>Con Fede Chlopecki · leeraprimeravista.com</p></div></footer>
 
 <script>
 (function () {
   var PRODUCTOS = {
-    'diagnostico': { nombre: 'Diagnóstico', bajada: '30 minutos por Zoom y una devolución escrita.', tarjeta: 54400, transferencia: 50048, sena: 1 },
-    'encuentro-a-medida': { nombre: 'Encuentro a medida', bajada: '1 hora por Zoom, con preparación previa con tu material.', tarjeta: 99000, transferencia: 91080, sena: 0.1 }
+    'diagnostico': {
+      nombre: 'Diagnóstico', tarjeta: 54400, transferencia: 50048, sena: 1,
+      bajada: 'En 30 minutos vemos cómo leés hoy y te llevás por escrito qué te conviene trabajar.',
+      despues: 'No hace falta que prepares nada.',
+      credito: 'Si después seguís con un nivel de Navegar la Partitura dentro de los 30 días, lo que pagaste se descuenta.'
+    },
+    'encuentro-a-medida': {
+      nombre: 'Encuentro a medida', tarjeta: 99000, transferencia: 91080, sena: 0.1,
+      bajada: 'Una hora sobre lo que vos necesitás. Lo preparo antes con tu material y te llevás la grabación y una devolución escrita.',
+      despues: 'Respondiendo ese mail me mandás la partitura o el material, así lo preparo antes.'
+    }
   };
   var WA = 'https://wa.me/5491178165441';
   var TZ = 'America/Argentina/Buenos_Aires';
@@ -286,7 +314,9 @@
       fetch(u).then(function (r) { return r.json(); }).then(function (r) {
         if (r.prueba) $('aviso-prueba').hidden = false;
         if (r.estado === 'confirmada') {
-          fin('<p><b>Listo, quedó confirmado.</b></p>' + (r.cuando ? '<p>' + esc(r.producto) + ': <b>' + esc(r.cuando) + '</b> (hora de Argentina), por Zoom.</p>' : '') +
+          var pr = PRODUCTOS[r.productoClave] || {};
+          fin('<p><b>Listo, quedó confirmado.</b></p>' + (r.cuando ? '<p>Nos vemos el <b>' + esc(r.cuando) + '</b> (hora de Argentina), por Zoom.</p>' : '') +
+            (pr.despues ? '<p>' + esc(pr.despues) + '</p>' : '') +
             '<p>Te mandé un mail con el link de Zoom y la invitación al calendario. Si no lo ves, fijate en spam.</p>' +
             (r.saldo > 0 ? '<p>El saldo de ' + pesos(r.saldo) + ' se abona antes del encuentro, por transferencia.</p>' : ''));
         } else if (r.estado === 'vencida') {
@@ -306,14 +336,26 @@
   if (!p) { mostrar('paso-elegir'); return; }
 
   $('titulo').textContent = p.nombre;
-  $('bajada').textContent = p.bajada + ' Elegí el día y la hora (hora de Argentina).';
+  $('bajada').textContent = p.bajada;
   document.title = 'Reservar ' + p.nombre + ' · A Primera Vista';
   if (q.get('fallo')) { $('error-turnos').textContent = 'El pago no se completó y no se cobró nada. Podés elegir el horario de nuevo.'; $('error-turnos').hidden = false; }
   mostrar('paso-turno');
 
   var sena = function (monto) { return Math.round(monto * p.sena); };
+  var ahorro = p.tarjeta - p.transferencia;
   $('monto-tarjeta').textContent = p.sena < 1 ? 'Tarjeta: seña de ' + pesos(sena(p.tarjeta)) + ' (total ' + pesos(p.tarjeta) + ')' : 'Tarjeta: ' + pesos(p.tarjeta);
-  $('monto-transferencia').textContent = p.sena < 1 ? 'Transferencia: seña de ' + pesos(sena(p.transferencia)) + ' (total ' + pesos(p.transferencia) + ')' : 'Transferencia: ' + pesos(p.transferencia);
+  $('monto-transferencia').textContent = p.sena < 1
+    ? 'Transferencia: seña de ' + pesos(sena(p.transferencia)) + ' (total ' + pesos(p.transferencia) + ', ahorrás ' + pesos(ahorro) + ')'
+    : 'Transferencia: ' + pesos(p.transferencia) + ' (ahorrás ' + pesos(ahorro) + ')';
+  if (p.credito) { $('texto-credito').textContent = p.credito; $('texto-credito').hidden = false; }
+  $('despues-extra').textContent = p.despues;
+  var textoBoton = function () {
+    var medio = $('form').medio.value;
+    if (medio === 'transferencia') return 'Reservar y ver los datos para transferir';
+    return p.sena < 1 ? 'Reservar y pagar la seña de ' + pesos(sena(p.tarjeta)) : 'Reservar y pagar ' + pesos(p.tarjeta);
+  };
+  $('enviar').textContent = textoBoton();
+  [].forEach.call($('form').querySelectorAll('[name=medio]'), function (r) { r.onchange = function () { $('enviar').textContent = textoBoton(); }; });
   if (p.sena < 1) { $('texto-sena').textContent = 'Al reservar se paga la seña del ' + Math.round(p.sena * 100) + ' %. El saldo, antes del encuentro.'; $('texto-sena').hidden = false; }
   if (producto === 'encuentro-a-medida') $('campo-nota').hidden = false;
 
@@ -360,7 +402,7 @@
       })
       .catch(function (e) {
         $('error-form').textContent = e.message || 'Algo falló. Probá de nuevo.'; $('error-form').hidden = false;
-        $('enviar').disabled = false; $('enviar').textContent = 'Reservar';
+        $('enviar').disabled = false; $('enviar').textContent = textoBoton();
       });
   };
 })();
