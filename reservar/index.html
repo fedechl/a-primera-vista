@@ -36,8 +36,11 @@
   .opcion p { color: var(--texto-suave); font-size: 17px; margin-top: 4px; }
   .opcion .precio { color: var(--texto); font-weight: 600; margin-top: 8px; }
 
-  .dias { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 10px; scroll-snap-type: x proximity; }
-  #bloque-horas { margin-top: 40px; }
+  .dias { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 18px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--linea) transparent; }
+  .dias::-webkit-scrollbar { height: 6px; }
+  .dias::-webkit-scrollbar-thumb { background: var(--linea); border-radius: 3px; }
+  .dias::-webkit-scrollbar-track { background: transparent; }
+  #bloque-horas { margin-top: 32px; }
   .horas { margin-top: 4px; }
   .dia, .hora { font: inherit; cursor: pointer; border: 1px solid var(--linea); background: #fff; color: var(--texto); border-radius: 8px; }
   .dia { flex: 0 0 auto; min-width: 74px; padding: 8px 10px; text-align: center; line-height: 1.25; scroll-snap-align: start; }
