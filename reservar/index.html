@@ -79,7 +79,8 @@
 
   .cita { margin: 2px 4px 8px; padding-left: 16px; border-left: 2px solid var(--dorado-claro); font-style: italic; font-size: 17px; color: var(--texto); }
   .cita cite { display: block; font-style: normal; font-size: 15px; color: var(--texto-suave); margin-top: 4px; }
-  .ancla { font-size: 17px; color: var(--texto); max-width: 760px; }
+  .formatos { max-width: 760px; display: grid; gap: 6px; font-size: 17px; color: var(--texto-suave); }
+  .formatos b { color: var(--texto); }
   .garantia { background: #fff; border: 1px dashed var(--dorado); border-radius: 6px; padding: 10px 14px; font-size: 16px; color: var(--texto); }
   .lista li + li { margin-top: 4px; }
 
@@ -190,7 +191,10 @@
 
         <h3 class="grupo">Navegar la Partitura</h3>
         <p class="intro-grupo">Tres niveles de 8 encuentros, uno por semana, el mismo día y a la misma hora. Cada nivel tiene su bitácora y abre el siguiente.</p>
-        <p class="ancla">Un <a href="?p=encuentro-a-medida">Encuentro a medida</a> suelto sale <b>$99.000</b>: ocho serían $792.000. Un nivel son <b>8 encuentros por $538.000</b>, y suma la bitácora, la garantía y un recorrido armado de punta a punta.</p>
+        <div class="formatos">
+          <p><b><a href="?p=encuentro-a-medida">Encuentro a medida</a></b> · Una hora sobre algo puntual: una obra, un ensayo, una audición cercana. <b>$99.000</b>.</p>
+          <p><b>Un nivel</b> · Un recorrido de 8 encuentros con bitácora, ejercicios entre encuentro y encuentro, y la garantía. <b>$538.000</b>.</p>
+        </div>
         <p class="garantia"><b>La garantía de cada nivel:</b> si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.</p>
         <div class="trio">
         <a class="opcion" href="?p=nivel-1">
@@ -627,7 +631,6 @@
     $('titulo-dia').textContent = 'Elegí cuándo empezar';
     $('titulo-hora').textContent = 'Elegí tu horario fijo';
     $('texto-sena').textContent = 'Se paga al reservar. Elegís el primer encuentro y los otros ' + (p.pack - 1) + ' quedan reservados el mismo día y a la misma hora de cada semana.';
-    if (!p.kit) { $('texto-credito').hidden = false; $('texto-credito').textContent = '8 Encuentros a medida sueltos serían $792.000; en el nivel son $538.000, con la bitácora y la garantía.' + (p.credito ? ' ' + p.credito : ''); }
     $('texto-sena').hidden = false;
     document.querySelector('.despues li:nth-child(2)').textContent = p.kit
       ? 'Si necesitás mover algo, lo hacés vos desde ese mail, con 24 h de aviso y dentro de la misma semana (un cambio).'
