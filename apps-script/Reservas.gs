@@ -58,7 +58,8 @@ function doPost(e) {
     var b = JSON.parse(e.postData.contents);
     CFG_ACTUAL = b.cfg || null;
     if (!b.secret || b.secret !== PropertiesService.getScriptProperties().getProperty('SECRET')) throw new Error('clave inválida');
-    var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito };
+    var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito,
+      habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar };
     if (!acciones[b.accion]) throw new Error('acción desconocida');
     salida = acciones[b.accion](b);
   } catch (err) {
@@ -273,6 +274,8 @@ function confirmar(b) {
     if (r.creditoUsado) usarCredito(r.email);
     if (r.producto === 'diagnostico') guardarCredito(r.email, pago.monto || r.ahora, 30 * 86400000, 'Diagnóstico');
     if (/^kit-/.test(r.producto) && r.audicion) guardarCredito(r.email, 90000, Number(r.audicion) + 60 * 86400000 - Date.now(), 'Kit de Audición');
+    var nv = /^nivel-(\d)$/.exec(r.producto);
+    if (nv) guardarNivel(r.email, Number(nv[1]), Math.max.apply(null, sesiones.map(function (x) { return x.fin; })));
     var fila = cargarVenta(r, pago, c, b.id);
     mailMusicoConfirmada(r, sesiones, c, p0.apv_ver);
     mailMuse(r, sesiones, pago, c, fila);
@@ -384,6 +387,43 @@ function usarCredito(email) {
   var props = PropertiesService.getScriptProperties(), k = claveCredito(email), v = props.getProperty(k);
   if (!v) return;
   var x = JSON.parse(v); x.usado = Date.now(); props.setProperty(k, JSON.stringify(x));
+}
+
+// ---------- Acceso a los Niveles 2 y 3 ----------
+// N2 y N3 se contratan al terminar el anterior (05 · Precios y reglas). Quien hizo el nivel anterior
+// por la web queda habilitado solo; a los demás los habilita Fede con un toque desde el mail de pedido.
+function claveNivel(email) { return 'nivel:' + String(email || '').trim().toLowerCase(); }
+function leerNivel(email) {
+  var v = PropertiesService.getScriptProperties().getProperty(claveNivel(email));
+  return v ? JSON.parse(v) : { n: 0, fin: 0 };
+}
+function guardarNivel(email, n, fin) {
+  var x = leerNivel(email);
+  if (n < x.n) return;
+  PropertiesService.getScriptProperties().setProperty(claveNivel(email), JSON.stringify({ n: n, fin: n === x.n ? Math.max(fin || 0, x.fin || 0) : (fin || 0) }));
+}
+function habilitado(b) {
+  var nivel = Number(b.nivel), x = leerNivel(b.email);
+  if (x.n >= nivel - 1) return { ok: true, desde: x.n === nivel - 1 ? (x.fin || 0) : 0 };
+  return { ok: false };
+}
+function pedirAcceso(b) {
+  var c = b.cfg || {}, nivel = Number(b.nivel);
+  if (habilitado(b).ok) return { ok: true, yaEsta: true };
+  enviar(c.avisos, 'Pedido de acceso al Nivel ' + nivel + ' · ' + b.nombre,
+    '<p>' + b.nombre + ' (' + b.email + ') quiere reservar el Nivel ' + nivel + ' de Navegar la Partitura y la web no encuentra su Nivel ' + (nivel - 1) +
+    ' (seguramente lo hizo antes de la web, por Ágora).</p><p>Si corresponde, tocá acá y le llega un mail para reservar: <a href="' + b.habilitarUrl + '">habilitar el Nivel ' + nivel + '</a>.</p>' +
+    '<p>Si no corresponde, no hagas nada.</p>');
+  return { ok: true };
+}
+function habilitar(b) {
+  var nivel = Number(b.nivel);
+  var ya = habilitado(b).ok;
+  if (!ya) guardarNivel(b.email, nivel - 1, 0);
+  enviar(b.email, 'Ya podés reservar el Nivel ' + nivel,
+    '<p>Hola' + (b.nombre ? ', ' + String(b.nombre).split(' ')[0] : '') + '.</p><p>Listo: ya podés reservar el Nivel ' + nivel +
+    ' de Navegar la Partitura. Entrá acá y usá este mismo mail: <a href="' + b.reservarUrl + '">reservar el Nivel ' + nivel + '</a>.</p>');
+  return { ok: true, yaEstaba: ya };
 }
 
 // Cada hora: recordatorio al músico 24 h antes de cada encuentro.

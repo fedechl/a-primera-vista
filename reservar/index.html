@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reservar · A Primera Vista</title>
-<meta name="description" content="Elegí tu horario y reservá tu Diagnóstico o tu Encuentro a medida con Fede.">
+<meta name="description" content="Reservá tu Diagnóstico, tu Kit de Audición o tu nivel de Navegar la Partitura con Fede Chlopecki.">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,6 +45,16 @@
   .opcion h3 { font-weight: 600; font-size: 22px; }
   .opcion p { color: var(--texto-suave); font-size: 17px; margin-top: 4px; }
   .opcion .precio { color: var(--texto); font-weight: 600; margin-top: 8px; }
+  .opcion .mas { color: var(--texto); font-size: 16px; margin-top: 8px; }
+  .opcion.destacada { border: 2px solid var(--dorado); border-left-width: 6px; }
+  .etiqueta-opcion { color: var(--dorado) !important; font-size: 15px !important; font-weight: 600; letter-spacing: .02em; margin: 0 0 2px !important; }
+  .opcion.cerrada { background: #FAFBFD; border-left-color: var(--linea); }
+  .opcion.cerrada h3 { color: var(--texto-suave); }
+  .candado { color: var(--texto-suave); font-weight: 500; }
+  .candado::before { content: "🔒 "; }
+  .intro-grupo { color: var(--texto-suave); font-size: 17px; margin-top: -6px; }
+  .lista { margin: 4px 0 12px 22px; }
+  .lista li + li { margin-top: 4px; }
 
   .dias { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 18px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--linea) transparent; }
   .dias::-webkit-scrollbar { height: 6px; }
@@ -126,48 +136,79 @@
 
     <!-- 1 · Qué reservar (si no vino en el link) -->
     <section id="paso-elegir" hidden>
-      <h2>¿Qué querés reservar?</h2>
+      <h2>¿Por dónde empezás?</h2>
       <div class="opciones">
-        <a class="opcion" href="?p=diagnostico">
+        <a class="opcion destacada" href="?p=diagnostico">
+          <p class="etiqueta-opcion">Si es tu primera vez</p>
           <h3>Diagnóstico</h3>
-          <p>En 30 minutos vemos cómo leés hoy y te llevás por escrito qué te conviene trabajar.</p>
-          <p class="precio">$54.400 · $50.048 con descuento por transferencia</p>
+          <p>El primer paso. En 30 minutos leés unos fragmentos cortos, de menos a más, y te llevás por escrito dónde estás parado y por dónde te conviene seguir.</p>
+          <p class="mas">Si después seguís con el Nivel 1, lo que pagaste se descuenta.</p>
         </a>
-        <a class="opcion" href="?p=encuentro-a-medida">
-          <h3>Encuentro a medida</h3>
-          <p>Una hora sobre lo que vos necesitás, preparada antes con tu material. Te llevás la grabación y una devolución escrita.</p>
-          <p class="precio">$99.000 · $91.080 con descuento por transferencia</p>
-        </a>
+
         <h3 class="grupo">Si tenés una audición</h3>
         <a class="opcion" href="?p=kit">
           <h3>Kit de Audición</h3>
           <p>Para llegar a tu audición con un plan y sabiendo qué hacer si te equivocás. Encuentros cada semana y simulacros de audición antes de la fecha.</p>
-          <p class="precio">Express, Calma o Puente, según cuánto falte</p>
+          <p class="mas">Con tu fecha te digo cuál va: Express, Calma o Puente.</p>
         </a>
+
         <h3 class="grupo">Navegar la Partitura</h3>
+        <p class="intro-grupo">Tres niveles de 8 encuentros, uno por semana, el mismo día y a la misma hora. Cada nivel tiene su bitácora y su garantía, y abre el siguiente.</p>
         <a class="opcion" href="?p=nivel-1">
-          <h3>Nivel 1 · De la duda a animarte</h3>
-          <p>8 encuentros, uno por semana, el mismo día y a la misma hora.</p>
-          <p class="precio">$538.000 ($67.250 por encuentro) · $494.960 con descuento por transferencia</p>
+          <p class="etiqueta-opcion">Nivel 1</p>
+          <h3>Encontrar la casa</h3>
+          <p>Para cuando leés por intuición, sin saber hacia dónde vas. Aprendés a sentir dónde está la casa (la tónica) antes de cantar y a reconocer hacia dónde quiere ir cada nota.</p>
         </a>
-        <a class="opcion" href="?p=nivel-2">
-          <h3>Nivel 2 · De lo seguro a lo incierto</h3>
-          <p>Para quienes terminaron el Nivel 1.</p>
-          <p class="precio">$538.000 · $494.960 con descuento por transferencia</p>
+        <a class="opcion cerrada" href="?p=nivel-2">
+          <p class="etiqueta-opcion">Nivel 2 · <span class="candado">se abre al terminar el Nivel 1</span></p>
+          <h3>El modo menor</h3>
+          <p>Lo que ordenaste en el Nivel 1, ahora en menor: la tercera que cambia el color, el sexto que baja y las alteraciones que confunden. Y pasar de mayor a menor sin perder la casa.</p>
         </a>
-        <a class="opcion" href="?p=nivel-3">
-          <h3>Nivel 3 · De depender a la autonomía</h3>
-          <p>Para quienes terminaron el Nivel 2.</p>
-          <p class="precio">$538.000 · $494.960 con descuento por transferencia</p>
+        <a class="opcion cerrada" href="?p=nivel-3">
+          <p class="etiqueta-opcion">Nivel 3 · <span class="candado">se abre al terminar el Nivel 2</span></p>
+          <h3>Todas las notas en su lugar</h3>
+          <p>Completás la escala: los caminos que faltaban para volver a casa, la casa que se muda al tono relativo y la lectura con todo junto, en mayor y en menor.</p>
         </a>
+
         <h3 class="grupo">Para quienes ya trabajaron conmigo</h3>
-        <a class="opcion" href="https://mpago.la/2cSSFMo" rel="noopener">
+        <a class="opcion" href="?p=club">
           <h3>Club de Lectura Musical</h3>
-          <p>Que no se pierda lo que ya aprendiste: dos lecturas por mes con devolución en audio, un podcast y un encuentro optativo de 30 minutos. Te suscribís por Mercado Pago y te das de baja cuando quieras.</p>
-          <p class="precio">$50.000 por mes (promo de lanzamiento)</p>
+          <p>Para que lo que ya ordenaste no se oxide, con muy poco tiempo: lecturas con devolución en audio, un podcast y, si querés, media hora conmigo por mes.</p>
         </a>
       </div>
+      <p class="duda">¿Necesitás algo puntual, como una obra que tenés que leer o una audición muy cercana? Está el <a href="?p=encuentro-a-medida">Encuentro a medida</a>.</p>
       <p class="duda">¿Tenés una duda antes? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20tengo%20una%20duda%20antes%20de%20reservar.">Escribime</a>.</p>
+    </section>
+
+    <!-- 1c · Club: qué es antes de suscribirse -->
+    <section id="paso-club" hidden>
+      <div class="caja">
+        <p><b>Es para quienes ya trabajaron conmigo:</b> sostiene lo que ordenamos juntos, a tu ritmo.</p>
+        <p class="despues-titulo" style="margin-top:14px">Cada mes te llega</p>
+        <ul class="lista">
+          <li>Dos lecturas, y a cada audio tuyo le devuelvo uno mío.</li>
+          <li>Un podcast de 5 minutos, para escuchar en el viaje o mientras lavás los platos.</li>
+          <li>Si querés, media hora conmigo para repasar.</li>
+          <li>En los meses de 5 semanas, traés algo tuyo y te devuelvo un audio.</li>
+        </ul>
+        <p>Llega por WhatsApp, los viernes a las 9. Con 15 minutos por lectura alcanza.</p>
+        <p><b>$50.000 por mes</b> con la promo de lanzamiento (después, $76.100). Se cobra solo cada mes con Mercado Pago y te das de baja cuando quieras desde tu cuenta, sin tener que explicar nada.</p>
+        <p style="margin-top:18px"><a class="boton" href="https://mpago.la/2cSSFMo" rel="noopener">Suscribirme con Mercado Pago</a></p>
+      </div>
+      <p class="duda">Si todavía no trabajamos juntos, el Club no es el primer paso: empezá por el <a href="?p=diagnostico">Diagnóstico</a>.</p>
+      <p class="duda">¿Tenés una duda antes? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20tengo%20una%20duda%20sobre%20el%20Club.">Escribime</a>.</p>
+    </section>
+
+    <!-- 1d · Niveles 2 y 3: se abren al terminar el anterior -->
+    <section id="paso-acceso" hidden>
+      <div class="caja" id="acceso-texto"></div>
+      <form id="form-acceso" novalidate style="margin-top:18px">
+        <label>Tu mail <input name="email" type="email" autocomplete="email" required maxlength="120"></label>
+        <label id="campo-nombre-acceso" hidden>Nombre y apellido <input name="nombre" autocomplete="name" maxlength="80"></label>
+        <p class="error" id="error-acceso" hidden></p>
+        <button class="boton" id="enviar-acceso" type="submit">Seguir</button>
+      </form>
+      <p class="duda">¿Todavía no hiciste el Nivel 1? Empezá por el <a href="?p=diagnostico">Diagnóstico</a> o por el <a href="?p=nivel-1">Nivel 1</a>.</p>
     </section>
 
     <!-- 1b · Kit de Audición: la fecha decide qué Kit va -->
@@ -281,18 +322,18 @@
       despues: KIT_DESPUES
     },
     'nivel-1': {
-      nombre: 'Navegar la Partitura · Nivel 1', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8,
-      bajada: 'De la duda a animarte. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
+      nombre: 'Navegar la Partitura · Nivel 1', titulo: 'Nivel 1 · Encontrar la casa', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8,
+      bajada: 'Sentir dónde está la casa antes de cantar y saber hacia dónde va cada nota. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
       despues: GARANTIA, credito: CREDITO_NIVEL
     },
     'nivel-2': {
-      nombre: 'Navegar la Partitura · Nivel 2', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8,
-      bajada: 'De lo seguro a lo incierto. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
+      nombre: 'Navegar la Partitura · Nivel 2', titulo: 'Nivel 2 · El modo menor', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8, requiere: 1,
+      bajada: 'Lo que ordenaste en el Nivel 1, ahora en menor, y pasar de mayor a menor sin perder la casa. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
       despues: GARANTIA, credito: CREDITO_NIVEL
     },
     'nivel-3': {
-      nombre: 'Navegar la Partitura · Nivel 3', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8,
-      bajada: 'De depender a la autonomía. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
+      nombre: 'Navegar la Partitura · Nivel 3', titulo: 'Nivel 3 · Todas las notas en su lugar', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8, requiere: 2,
+      bajada: 'Completar la escala, en mayor y en menor, y leer con todo junto. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
       despues: GARANTIA, credito: CREDITO_NIVEL
     }
   };
@@ -303,7 +344,7 @@
   var pesos = function (n) { return '$' + Math.round(n).toLocaleString('es-AR'); };
   var fmt = function (ms, op) { return new Intl.DateTimeFormat('es-AR', Object.assign({ timeZone: TZ }, op)).format(new Date(ms)); };
   var cuando = function (ms) { return fmt(ms, { weekday: 'long', day: 'numeric', month: 'long' }) + ' a las ' + fmt(ms, { hour: '2-digit', minute: '2-digit', hour12: false }); };
-  var mostrar = function (id) { ['paso-elegir', 'paso-audicion', 'paso-turno', 'paso-datos', 'paso-fin'].forEach(function (s) { $(s).hidden = s !== id; }); window.scrollTo(0, 0); };
+  var mostrar = function (id) { ['paso-elegir', 'paso-club', 'paso-acceso', 'paso-audicion', 'paso-turno', 'paso-datos', 'paso-fin'].forEach(function (s) { $(s).hidden = s !== id; }); window.scrollTo(0, 0); };
   var etiqueta = function (x) { return (x.tipo === 'simulacro' ? 'Simulacro ' : 'Encuentro ') + x.n; };
   var listaSes = function (ses) {
     return '<ul style="margin-left:22px">' + ses.map(function (x) { return '<li>' + esc(x.etiqueta || etiqueta(x)) + ': ' + esc(x.cuando || cuando(x.inicio)) + (x.tipo === 'simulacro' ? ' (30 min)' : '') + '</li>'; }).join('') + '</ul>';
@@ -478,13 +519,20 @@
     return;
   }
 
-  if (!p) { mostrar('paso-elegir'); return; }
+  if (producto === 'club') {
+    $('titulo').textContent = 'Club de Lectura Musical';
+    $('bajada').textContent = 'Para que lo que ya ordenaste no se oxide, con muy poco tiempo.';
+    document.title = 'Club de Lectura Musical · A Primera Vista';
+    mostrar('paso-club');
+    return;
+  }
 
-  $('titulo').textContent = p.nombre;
+  if (!p) { $('titulo').textContent = 'Reservá'; $('bajada').textContent = 'Todos los encuentros son por Zoom, mano a mano, en hora de Argentina.'; mostrar('paso-elegir'); return; }
+
+  $('titulo').textContent = p.titulo || p.nombre;
   $('bajada').textContent = p.bajada;
   document.title = 'Reservar ' + p.nombre + ' · A Primera Vista';
   if (q.get('fallo')) { $('error-turnos').textContent = 'El pago no se completó y no se cobró nada. Podés elegir el horario de nuevo.'; $('error-turnos').hidden = false; }
-  mostrar('paso-turno');
 
   var sena = function (monto) { return Math.round(monto * p.sena); };
   var ahorro = p.tarjeta - p.transferencia;
@@ -492,7 +540,6 @@
   $('monto-transferencia').textContent = p.sena < 1
     ? 'Transferencia: seña de ' + pesos(sena(p.transferencia)) + ' (total ' + pesos(p.transferencia) + ', ahorrás ' + pesos(ahorro) + ')'
     : 'Transferencia: ' + pesos(p.transferencia) + ' (ahorrás ' + pesos(ahorro) + ')';
-  if (p.pack) $('monto-tarjeta').textContent = 'Tarjeta: ' + pesos(p.tarjeta) + ' (' + pesos(p.tarjeta / p.pack) + ' por encuentro)';
   if (p.credito) { $('texto-credito').textContent = p.credito; $('texto-credito').hidden = false; }
   $('despues-extra').textContent = p.despues;
   var textoBoton = function () {
@@ -523,13 +570,58 @@
     if (p.kit) $('texto-sena').textContent = 'Se paga al reservar. El plan se arma hacia tu audición: los encuentros van el mismo día y a la misma hora, y las últimas 4 semanas suman el simulacro del viernes. Todo antes de tu audición del ' + fmt(new Date(audicion + 'T12:00:00-03:00').getTime(), { day: 'numeric', month: 'long' }) + '.';
   }
 
-  fetch('/api/turnos?p=' + encodeURIComponent(producto) + (audicion ? '&audicion=' + encodeURIComponent(audicion) : '')).then(function (r) { return r.json(); }).then(function (r) {
-    if (r.prueba) $('aviso-prueba').hidden = false;
-    if (r.error) throw new Error(r.error);
-    series = r.series || {}; sims = r.sims || {};
-    if (p.kit && !r.dias.length) { $('cargando').hidden = true; $('error-turnos').innerHTML = 'No quedan horarios para armar el Kit antes de tu audición. Escribime por <a href="' + WA + '">WhatsApp</a> y lo vemos.'; $('error-turnos').hidden = false; return; }
-    pintarDias(r.dias, elegirHora);
-  }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
+  var desdeAcceso = 0;
+  function cargarTurnos() {
+    mostrar('paso-turno');
+    fetch('/api/turnos?p=' + encodeURIComponent(producto) + (audicion ? '&audicion=' + encodeURIComponent(audicion) : '')).then(function (r) { return r.json(); }).then(function (r) {
+      if (r.prueba) $('aviso-prueba').hidden = false;
+      if (r.error) throw new Error(r.error);
+      series = r.series || {}; sims = r.sims || {};
+      if (p.kit && !r.dias.length) { $('cargando').hidden = true; $('error-turnos').innerHTML = 'No quedan horarios para armar el Kit antes de tu audición. Escribime por <a href="' + WA + '">WhatsApp</a> y lo vemos.'; $('error-turnos').hidden = false; return; }
+      var dias = r.dias;
+      if (desdeAcceso) dias = dias.map(function (d) { return { fecha: d.fecha, turnos: d.turnos.filter(function (t) { return t >= desdeAcceso; }) }; }).filter(function (d) { return d.turnos.length; });
+      if (desdeAcceso && !dias.length && r.dias.length) {
+        $('cargando').hidden = true;
+        $('error-turnos').innerHTML = 'Tu Nivel ' + p.requiere + ' termina el ' + esc(cuando(desdeAcceso)) + ', y el Nivel ' + (p.requiere + 1) + ' arranca después. Volvé a entrar en unos días, o escribime por <a href="' + WA + '">WhatsApp</a> y te guardo tu horario.';
+        $('error-turnos').hidden = false; return;
+      }
+      pintarDias(dias, elegirHora);
+    }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
+  }
+
+  // Niveles 2 y 3: primero el mail, para ver si ya hizo el nivel anterior.
+  if (p.requiere) {
+    var nAnt = p.requiere, pidiendo = false;
+    $('acceso-texto').innerHTML = '<p>El Nivel ' + (nAnt + 1) + ' sigue donde termina el Nivel ' + nAnt + ': por eso se abre cuando lo terminás.</p>' +
+      '<p>Poné el mail con el que hiciste el Nivel ' + nAnt + ' y elegís tus horarios.</p>';
+    mostrar('paso-acceso');
+    $('form-acceso').onsubmit = function (ev) {
+      ev.preventDefault();
+      var f = ev.target, email = f.email.value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('error-acceso').textContent = 'Revisá tu mail.'; $('error-acceso').hidden = false; return; }
+      if (pidiendo && !f.nombre.value.trim()) { $('error-acceso').textContent = 'Poné tu nombre, así sé quién sos.'; $('error-acceso').hidden = false; return; }
+      $('enviar-acceso').disabled = true; $('error-acceso').hidden = true;
+      fetch('/api/acceso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: pidiendo ? 'pedir' : 'verificar', p: producto, email: email, nombre: f.nombre.value }) })
+        .then(function (r) { return r.json(); }).then(function (r) {
+          $('enviar-acceso').disabled = false;
+          if (r.error) throw new Error(r.error);
+          if (r.prueba) $('aviso-prueba').hidden = false;
+          if (pidiendo) {
+            fin(r.yaEsta ? '<p>Ya estás habilitado: <a href="?p=' + producto + '">reservá tu Nivel ' + (nAnt + 1) + '</a> con ese mail.</p>'
+              : '<p><b>Listo, ya me llegó tu pedido.</b></p><p>Lo reviso y, apenas te habilito, te llega un mail a ' + esc(email) + ' con el link para reservar el Nivel ' + (nAnt + 1) + '.</p>');
+            return;
+          }
+          if (r.ok) { desdeAcceso = r.desde || 0; $('form').email.value = email; cargarTurnos(); return; }
+          pidiendo = true;
+          $('acceso-texto').innerHTML = '<p>No encuentro un Nivel ' + nAnt + ' con ' + esc(email) + '.</p>' +
+            '<p>Si lo hiciste con otro mail, probá con ese. Si lo hiciste antes de que existiera esta página, dejame tu nombre y te habilito yo: te llega un mail con el link para reservar.</p>';
+          $('campo-nombre-acceso').hidden = false; $('enviar-acceso').textContent = 'Pedir que me habilites';
+          f.email.oninput = function () { pidiendo = false; $('campo-nombre-acceso').hidden = true; $('enviar-acceso').textContent = 'Seguir'; };
+        }).catch(function (e) { $('enviar-acceso').disabled = false; $('error-acceso').textContent = e.message || 'Algo falló. Probá de nuevo.'; $('error-acceso').hidden = false; });
+    };
+  } else {
+    cargarTurnos();
+  }
 
   function elegirHora(ms, boton) {
     elegido = ms;

@@ -25,8 +25,8 @@ export const PRODUCTOS = {
   },
   // Navegar la Partitura: 8 encuentros semanales en el mismo día y horario, pagados al reservar.
   'nivel-1': { nombre: 'Navegar la Partitura · Nivel 1', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
-  'nivel-2': { nombre: 'Navegar la Partitura · Nivel 2', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
-  'nivel-3': { nombre: 'Navegar la Partitura · Nivel 3', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
+  'nivel-2': { nombre: 'Navegar la Partitura · Nivel 2', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true, requiere: 1 },
+  'nivel-3': { nombre: 'Navegar la Partitura · Nivel 3', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true, requiere: 2 },
   // Kit de Audición: encuentros semanales + 4 simulacros de viernes (30 min), todo antes de la audición.
   // Un solo cambio, dentro de la misma semana (05 · Precios y reglas).
   'kit-express': { nombre: 'Kit de Audición · Express', duracion: 60, cantidad: 4, simulacros: 4, semanasMin: 3, tarjeta: 418500, transferencia: 385020, sena: 1, kit: true, maxMov: 1, mismaSemana: true },

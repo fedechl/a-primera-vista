@@ -25,6 +25,14 @@ export default async function handler(req, res) {
     return json(res, 400, { error: 'Revisá tu nombre, tu mail y tu WhatsApp.' });
   if (!turnoPlausible(inicio)) return json(res, 400, { error: 'Ese horario ya no está disponible. Elegí otro.' });
 
+  // Niveles 2 y 3: solo para quienes terminaron el anterior (o a quienes Fede habilitó).
+  if (p.requiere && !modoPrueba()) {
+    let h;
+    try { h = await gas('habilitado', { email, nivel: p.requiere + 1 }); } catch (e) { console.error(e); return json(res, 502, { error: 'No pude revisar tu acceso. Probá de nuevo en un rato.' }); }
+    if (!h.ok) return json(res, 403, { error: 'El Nivel ' + (p.requiere + 1) + ' se reserva con el mail con el que hiciste el Nivel ' + p.requiere + '.' });
+    if (h.desde && inicio < h.desde) return json(res, 400, { error: 'Elegí un día después de tu último encuentro del Nivel ' + p.requiere + '.' });
+  }
+
   const id = nuevoId();
   const ahora = Date.now();
   const ver = firmar('ver', id);
