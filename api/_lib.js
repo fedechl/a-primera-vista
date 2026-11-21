@@ -23,7 +23,12 @@ export const PRODUCTOS = {
     transferencia: 91080,
     sena: 0.1, // seña del 10 % al reservar
   },
+  // Navegar la Partitura: 8 encuentros semanales en el mismo día y horario, pagados al reservar.
+  'nivel-1': { nombre: 'Navegar la Partitura · Nivel 1', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
+  'nivel-2': { nombre: 'Navegar la Partitura · Nivel 2', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
+  'nivel-3': { nombre: 'Navegar la Partitura · Nivel 3', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
 };
+export const SEMANAS_MAX_PACK = 10; // el nivel se completa dentro de las 10 semanas
 
 // La disponibilidad sale del calendario «APV · Disponibilidad» de Fede (se edita semana a semana).
 // Estos horarios son solo los de muestra del modo prueba (los mismos que tenía Agora). 1 = lunes … 5 = viernes.
@@ -52,10 +57,11 @@ export function firmaValida(tipo, id, k) {
 }
 export const nuevoId = () => crypto.randomBytes(9).toString('base64url');
 
-export function montos(p, medio) {
-  const total = medio === 'transferencia' ? p.transferencia : p.tarjeta;
+// credito: monto a descontar (el 8 % por transferencia se calcula sobre el precio publicado, después se resta el crédito).
+export function montos(p, medio, credito = 0) {
+  const total = Math.max(0, (medio === 'transferencia' ? p.transferencia : p.tarjeta) - credito);
   const ahora = Math.round(total * p.sena);
-  return { total, ahora, saldo: total - ahora };
+  return { total, ahora, saldo: total - ahora, credito };
 }
 
 // Lo que no se manda nunca al navegador va en cfg: viaja solo de Vercel a Apps Script.
@@ -139,9 +145,9 @@ export async function leerCuerpo(req) {
 const aAR = (ms) => new Date(ms + TZ_OFFSET_MIN * 60000);
 const desdeAR = (y, m, d, h, min) => Date.UTC(y, m, d, h, min) - TZ_OFFSET_MIN * 60000;
 
-export function bloquesDePrueba(ahora = Date.now()) {
+export function bloquesDePrueba(semanasExtra = 0, ahora = Date.now()) {
   const hoy = aAR(ahora), bloques = [];
-  for (let i = 0; i <= DIAS_VISIBLES + 1; i++) {
+  for (let i = 0; i <= DIAS_VISIBLES + 1 + semanasExtra * 7; i++) {
     const d = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate() + i));
     for (const [a, b] of HORARIOS_PRUEBA[d.getUTCDay()] || []) {
       bloques.push({ s: desdeAR(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), a, 0), e: desdeAR(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), b, 0) });
@@ -181,8 +187,42 @@ export function turnoPlausible(inicio, ahora = Date.now()) {
     inicio >= ahora + ANTICIPACION_H * 3600000 && inicio <= ahora + (DIAS_VISIBLES + 2) * 86400000;
 }
 
-export async function leerAgenda() {
-  if (modoPrueba()) return { disponibles: bloquesDePrueba(), ocupados: [], feriados: [] };
+export async function leerAgenda(semanasExtra = 0) {
+  if (modoPrueba()) return { disponibles: bloquesDePrueba(semanasExtra), ocupados: [], feriados: [] };
   const ahora = Date.now();
-  return gas('ocupado', { desde: ahora, hasta: ahora + (DIAS_VISIBLES + 2) * 86400000 });
+  return gas('ocupado', { desde: ahora, hasta: ahora + (DIAS_VISIBLES + 2 + semanasExtra * 7) * 86400000 });
+}
+
+// Un nivel: el mismo día y horario cada semana. Si una semana no se puede (feriado, vacaciones, algo
+// en el calendario), se pasa a la siguiente. Si no entran los 8 en 10 semanas, ese horario no se ofrece.
+export function calcularSerie(producto, inicio, disponibles, ocupados, feriados) {
+  const p = PRODUCTOS[producto];
+  const feriadosSet = new Set(feriados);
+  const libre = (s) => {
+    const e = s + p.duracion * 60000;
+    return !feriadosSet.has(aAR(s).toISOString().slice(0, 10)) &&
+      disponibles.some((d) => s >= d.s && e <= d.e) &&
+      !ocupados.some((o) => s < o.e && e > o.s);
+  };
+  const serie = [];
+  for (let w = 0; w < SEMANAS_MAX_PACK && serie.length < p.cantidad; w++) {
+    const s = inicio + w * 7 * 86400000;
+    if (libre(s)) serie.push(s);
+  }
+  return serie.length === p.cantidad ? serie : null;
+}
+
+export function turnosDePack(producto, a) {
+  const dias = calcularTurnos(producto, a.disponibles || [], a.ocupados || [], a.feriados || []);
+  const series = {};
+  const out = [];
+  for (const d of dias) {
+    const t = d.turnos.filter((s) => {
+      const serie = calcularSerie(producto, s, a.disponibles || [], a.ocupados || [], a.feriados || []);
+      if (serie) series[s] = serie;
+      return !!serie;
+    });
+    if (t.length) out.push({ fecha: d.fecha, turnos: t });
+  }
+  return { dias: out, series };
 }

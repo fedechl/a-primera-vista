@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     if (modoPrueba()) {
       if (req.method === 'POST') return json(res, 200, { prueba: true, ok: true });
       const a = await leerAgenda();
-      return json(res, 200, { prueba: true, producto: 'diagnostico', dias: calcularTurnos('diagnostico', a.disponibles, [], []) });
+      return json(res, 200, { prueba: true, producto: 'Diagnóstico', productoClave: 'diagnostico', puedeMover: true, sesiones: [{ n: 1, inicio: Date.now() + 5 * 86400000, cuando: 'en 5 días', movible: true }], dias: calcularTurnos('diagnostico', a.disponibles, [], []) });
     }
     const r = await gas('estado', { id: b.id });
     if (r.estado !== 'confirmada' || !PRODUCTOS[r.productoClave]) return json(res, 409, { error: 'Esta reserva no se puede mover desde acá. Escribime por WhatsApp.' });
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     }
     const inicio = Number(b.inicio);
     if (!turnoPlausible(inicio)) return json(res, 400, { error: 'Ese horario ya no está disponible. Elegí otro.' });
-    const m = await gas('mover', { id: b.id, inicio, fin: inicio + PRODUCTOS[r.productoClave].duracion * 60000 });
+    const m = await gas('mover', { id: b.id, n: Number(b.n || 1), inicio, fin: inicio + PRODUCTOS[r.productoClave].duracion * 60000 });
     if (!m.ok) return json(res, 409, { error: m.motivo || 'No se pudo mover.' });
     return json(res, 200, m);
   } catch (e) {

@@ -41,6 +41,7 @@
 
   .opciones { display: grid; gap: 14px; }
   .opcion { display: block; text-decoration: none; border: 1px solid var(--linea); border-left: 3px solid var(--dorado); background: #fff; padding: 18px 20px; border-radius: 6px; }
+  .grupo { font-weight: 500; font-size: 22px; margin: 18px 0 0; }
   .opcion h3 { font-weight: 600; font-size: 22px; }
   .opcion p { color: var(--texto-suave); font-size: 17px; margin-top: 4px; }
   .opcion .precio { color: var(--texto); font-weight: 600; margin-top: 8px; }
@@ -78,6 +79,8 @@
   .medio .nota { color: var(--texto-suave); font-size: 16px; }
   .elegido { background: #fff; border: 1px solid var(--linea); border-radius: 6px; padding: 12px 14px; font-size: 17px; }
   .elegido b { font-weight: 600; }
+  .elegido ol { margin: 6px 0 0 22px; }
+  .elegido .nota-serie { color: var(--texto-suave); font-size: 15px; margin-top: 6px; }
   .elegido button { font: inherit; font-size: 16px; background: none; border: 0; color: var(--texto-suave); text-decoration: underline; cursor: pointer; margin-left: 6px; }
   .boton { display: inline-block; font: inherit; font-weight: 600; background: var(--dorado); color: var(--azul-hondo); border: 0; border-radius: 999px; padding: 15px 28px; text-decoration: none; cursor: pointer; text-align: center; }
   .boton:hover { background: var(--dorado-claro); }
@@ -131,17 +134,33 @@
           <p>Una hora sobre lo que vos necesitás, preparada antes con tu material. Te llevás la grabación y una devolución escrita.</p>
           <p class="precio">$99.000 · $91.080 con descuento por transferencia</p>
         </a>
+        <h3 class="grupo">Navegar la Partitura</h3>
+        <a class="opcion" href="?p=nivel-1">
+          <h3>Nivel 1 · De la duda a animarte</h3>
+          <p>8 encuentros, uno por semana, el mismo día y a la misma hora.</p>
+          <p class="precio">$538.000 ($67.250 por encuentro) · $494.960 con descuento por transferencia</p>
+        </a>
+        <a class="opcion" href="?p=nivel-2">
+          <h3>Nivel 2 · De lo seguro a lo incierto</h3>
+          <p>Para quienes terminaron el Nivel 1.</p>
+          <p class="precio">$538.000 · $494.960 con descuento por transferencia</p>
+        </a>
+        <a class="opcion" href="?p=nivel-3">
+          <h3>Nivel 3 · De depender a la autonomía</h3>
+          <p>Para quienes terminaron el Nivel 2.</p>
+          <p class="precio">$538.000 · $494.960 con descuento por transferencia</p>
+        </a>
       </div>
       <p class="duda">¿Tenés una duda antes? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20tengo%20una%20duda%20antes%20de%20reservar.">Escribime</a>.</p>
     </section>
 
     <!-- 2 · Día y hora -->
     <section id="paso-turno" hidden>
-      <h2>Elegí el día</h2>
+      <h2 id="titulo-dia">Elegí el día</h2>
       <p class="suave" id="cargando">Buscando horarios libres…</p>
       <div class="dias" id="dias" role="group" aria-label="Días con horarios libres"></div>
       <div id="bloque-horas" hidden>
-        <h2>Elegí la hora</h2>
+        <h2 id="titulo-hora">Elegí la hora</h2>
         <div class="horas" id="horas" role="group" aria-label="Horarios libres"></div>
       </div>
       <p class="error" id="error-turnos" hidden></p>
@@ -199,6 +218,8 @@
 
 <script>
 (function () {
+  var GARANTIA = 'La garantía del nivel: «Si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.»';
+  var CREDITO_NIVEL = 'Si hiciste el Diagnóstico en los últimos 30 días, usá el mismo mail: lo que pagaste se descuenta solo al pagar.';
   var PRODUCTOS = {
     'diagnostico': {
       nombre: 'Diagnóstico', tarjeta: 54400, transferencia: 50048, sena: 1,
@@ -210,6 +231,21 @@
       nombre: 'Encuentro a medida', tarjeta: 99000, transferencia: 91080, sena: 0.1,
       bajada: 'Una hora sobre lo que vos necesitás. Lo preparo antes con tu material y te llevás la grabación y una devolución escrita.',
       despues: 'Respondiendo ese mail me mandás la partitura o el material, así lo preparo antes.'
+    },
+    'nivel-1': {
+      nombre: 'Navegar la Partitura · Nivel 1', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8,
+      bajada: 'De la duda a animarte. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
+      despues: GARANTIA, credito: CREDITO_NIVEL
+    },
+    'nivel-2': {
+      nombre: 'Navegar la Partitura · Nivel 2', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8,
+      bajada: 'De lo seguro a lo incierto. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
+      despues: GARANTIA, credito: CREDITO_NIVEL
+    },
+    'nivel-3': {
+      nombre: 'Navegar la Partitura · Nivel 3', tarjeta: 538000, transferencia: 494960, sena: 1, pack: 8,
+      bajada: 'De depender a la autonomía. 8 encuentros, uno por semana, el mismo día y a la misma hora.',
+      despues: GARANTIA, credito: CREDITO_NIVEL
     }
   };
   var WA = 'https://wa.me/5491178165441';
@@ -281,6 +317,7 @@
   // Mover un encuentro ya confirmado (link del mail de confirmación)
   if (q.get('id') && q.get('k') && q.get('mover')) {
     var base = 'id=' + encodeURIComponent(q.get('id')) + '&k=' + encodeURIComponent(q.get('k'));
+    var nMover = 1;
     $('titulo').textContent = 'Mover tu encuentro';
     $('bajada').textContent = 'Elegí el nuevo día y la hora (hora de Argentina).';
     mostrar('paso-turno');
@@ -288,17 +325,38 @@
       if (r.prueba) $('aviso-prueba').hidden = false;
       if (r.error) throw new Error(r.error);
       if (!r.prueba && !r.puedeMover) throw new Error(r.movimientos >= 2 ? 'Ya lo moviste 2 veces. Escribime por WhatsApp y lo vemos.' : 'Falta menos de 24 h para tu encuentro. Para moverlo, escribime por WhatsApp.');
-      if (r.cuando) $('bajada').textContent = 'Hoy está el ' + r.cuando + '. Elegí el nuevo día y la hora (hora de Argentina).';
-      pintarDias(r.dias, function (ms, boton) {
+      var arrancar = function (ses) {
+        nMover = ses.n;
+        $('bajada').textContent = 'Hoy está el ' + ses.cuando + '. Elegí el nuevo día y la hora (hora de Argentina).' +
+          (r.maxMovimientos ? ' Te quedan ' + (r.maxMovimientos - r.movimientos) + ' cambios.' : '');
+        mostrar('paso-turno');
+        pintarDias(r.dias, moverA);
+      };
+      var sesiones = r.sesiones || [];
+      if (sesiones.length > 1) {
+        $('bajada').textContent = '¿Cuál de tus encuentros querés mover?';
+        $('cargando').hidden = true;
+        fin('<p>¿Cuál de tus encuentros querés mover?</p>' + sesiones.map(function (x) {
+          return x.movible ? '<p><button type="button" class="boton" data-n="' + x.n + '">Encuentro ' + x.n + ': ' + esc(x.cuando) + '</button></p>'
+            : '<p class="suave">Encuentro ' + x.n + ': ' + esc(x.cuando) + ' (ya no se puede mover)</p>';
+        }).join(''));
+        [].forEach.call($('fin').querySelectorAll('button[data-n]'), function (b) {
+          b.onclick = function () { arrancar(sesiones.filter(function (x) { return x.n === Number(b.dataset.n); })[0]); };
+        });
+        return;
+      }
+      arrancar(sesiones[0] || { n: 1, cuando: r.cuando });
+    }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').innerHTML = esc(e.message) + ' <a href="' + WA + '">WhatsApp</a>'; $('error-turnos').hidden = false; });
+
+    function moverA(ms, boton) {
         if (!confirm('¿Lo pasamos al ' + cuando(ms) + '?')) return;
         boton.disabled = true;
-        fetch('/api/mover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: q.get('id'), k: q.get('k'), inicio: ms }) })
+        fetch('/api/mover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: q.get('id'), k: q.get('k'), n: nMover, inicio: ms }) })
           .then(function (x) { return x.json(); }).then(function (x) {
             if (x.error) throw new Error(x.error);
             fin('<p><b>Listo, lo moviste.</b> Tu encuentro quedó para el <b>' + esc(cuando(ms)) + '</b> (hora de Argentina). El link de Zoom es el mismo y te llegó la actualización por mail.</p>');
           }).catch(function (e) { boton.disabled = false; $('error-turnos').textContent = e.message; $('error-turnos').hidden = false; });
-      });
-    }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').innerHTML = esc(e.message) + ' <a href="' + WA + '">WhatsApp</a>'; $('error-turnos').hidden = false; });
+    }
     return;
   }
 
@@ -315,9 +373,13 @@
         if (r.prueba) $('aviso-prueba').hidden = false;
         if (r.estado === 'confirmada') {
           var pr = PRODUCTOS[r.productoClave] || {};
-          fin('<p><b>Listo, quedó confirmado.</b></p>' + (r.cuando ? '<p>Nos vemos el <b>' + esc(r.cuando) + '</b> (hora de Argentina), por Zoom.</p>' : '') +
+          var ses = r.sesiones || [];
+          fin('<p><b>Listo, quedó confirmado.</b></p>' +
+            (ses.length > 1
+              ? '<p>Tus ' + ses.length + ' encuentros, por Zoom (hora de Argentina):</p><ol style="margin-left:22px">' + ses.map(function (x) { return '<li>' + esc(x.cuando) + '</li>'; }).join('') + '</ol>'
+              : (r.cuando ? '<p>Nos vemos el <b>' + esc(r.cuando) + '</b> (hora de Argentina), por Zoom.</p>' : '')) +
             (pr.despues ? '<p>' + esc(pr.despues) + '</p>' : '') +
-            '<p>Te mandé un mail con el link de Zoom y la invitación al calendario. Si no lo ves, fijate en spam.</p>' +
+            '<p>Te mandé un mail con el link de Zoom' + (ses.length > 1 ? ' y un archivo para sumar las fechas a tu calendario' : ' y la invitación al calendario') + '. Si no lo ves, fijate en spam.</p>' +
             (r.saldo > 0 ? '<p>El saldo de ' + pesos(r.saldo) + ' se abona antes del encuentro, por transferencia.</p>' : ''));
         } else if (r.estado === 'vencida') {
           fin('<p>Esta reserva venció y el horario se liberó.</p><p><a class="boton" href="/reservar/">Elegir otro horario</a></p>');
@@ -347,6 +409,7 @@
   $('monto-transferencia').textContent = p.sena < 1
     ? 'Transferencia: seña de ' + pesos(sena(p.transferencia)) + ' (total ' + pesos(p.transferencia) + ', ahorrás ' + pesos(ahorro) + ')'
     : 'Transferencia: ' + pesos(p.transferencia) + ' (ahorrás ' + pesos(ahorro) + ')';
+  if (p.pack) $('monto-tarjeta').textContent = 'Tarjeta: ' + pesos(p.tarjeta) + ' (' + pesos(p.tarjeta / p.pack) + ' por encuentro)';
   if (p.credito) { $('texto-credito').textContent = p.credito; $('texto-credito').hidden = false; }
   $('despues-extra').textContent = p.despues;
   var textoBoton = function () {
@@ -358,16 +421,36 @@
   [].forEach.call($('form').querySelectorAll('[name=medio]'), function (r) { r.onchange = function () { $('enviar').textContent = textoBoton(); }; });
   if (p.sena < 1) { $('texto-sena').textContent = 'Al reservar se paga la seña del ' + Math.round(p.sena * 100) + ' %. El saldo, antes del encuentro.'; $('texto-sena').hidden = false; }
   if (producto === 'encuentro-a-medida') $('campo-nota').hidden = false;
+  var series = {};
+  if (p.pack) {
+    $('titulo-dia').textContent = 'Elegí cuándo empezar';
+    $('titulo-hora').textContent = 'Elegí tu horario fijo';
+    $('texto-sena').textContent = 'Se paga al reservar. Elegís el primer encuentro y los otros ' + (p.pack - 1) + ' quedan reservados el mismo día y a la misma hora de cada semana.';
+    $('texto-sena').hidden = false;
+    document.querySelector('.despues li:nth-child(2)').textContent = 'Si necesitás mover un encuentro, lo hacés vos desde ese mail, con 24 h de aviso (hasta 2 cambios en el nivel).';
+    document.querySelector('.despues li:first-child').textContent = 'Te llega un mail con tus ' + p.pack + ' fechas, el link de Zoom y un archivo para sumarlas a tu calendario.';
+  }
 
   fetch('/api/turnos?p=' + encodeURIComponent(producto)).then(function (r) { return r.json(); }).then(function (r) {
     if (r.prueba) $('aviso-prueba').hidden = false;
     if (r.error) throw new Error(r.error);
+    series = r.series || {};
     pintarDias(r.dias, elegirHora);
   }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
 
   function elegirHora(ms) {
     elegido = ms;
-    $('elegido').innerHTML = p.nombre + ': <b>' + esc(cuando(ms)) + '</b><button type="button" id="cambiar">Cambiar</button>';
+    var serie = series[ms];
+    if (p.pack && serie) {
+      var dia = fmt(ms, { weekday: 'long' });
+      var semanal = 'todos los ' + (/s$/.test(dia) ? dia : dia + 's') + ' a las ' + fmt(ms, { hour: '2-digit', minute: '2-digit', hour12: false });
+      var salteos = Math.round((serie[serie.length - 1] - serie[0]) / (7 * 86400000)) + 1 - serie.length;
+      $('elegido').innerHTML = p.nombre + ': <b>' + esc(semanal) + '</b><button type="button" id="cambiar">Cambiar</button>' +
+        '<ol>' + serie.map(function (x) { return '<li>' + esc(cuando(x)) + '</li>'; }).join('') + '</ol>' +
+        (salteos ? '<p class="nota-serie">Hay ' + (salteos === 1 ? 'una semana que se saltea' : salteos + ' semanas que se saltean') + ' por feriado o agenda: el nivel sigue la semana siguiente.</p>' : '');
+    } else {
+      $('elegido').innerHTML = p.nombre + ': <b>' + esc(cuando(ms)) + '</b><button type="button" id="cambiar">Cambiar</button>';
+    }
     $('cambiar').onclick = function () { mostrar('paso-turno'); };
     $('error-form').hidden = true;
     mostrar('paso-datos');
@@ -394,10 +477,14 @@
         }
         if (r.pagar) { location.href = r.pagar; return; }
         var t = r.transferencia || {};
-        fin('<p><b>Te guardé el turno.</b> ' + esc(p.nombre) + ': ' + esc(cuando(elegido)) + '.</p>' +
+        var fechas = r.fechas || [elegido];
+        fin((fechas.length > 1
+            ? '<p><b>Te guardé tus ' + fechas.length + ' encuentros</b> de ' + esc(p.nombre) + ':</p><ol style="margin-left:22px">' + fechas.map(function (x) { return '<li>' + esc(cuando(x)) + '</li>'; }).join('') + '</ol>'
+            : '<p><b>Te guardé el turno.</b> ' + esc(p.nombre) + ': ' + esc(cuando(elegido)) + '.</p>') +
+          (r.montos.credito ? '<p>Ya se descontó el crédito de tu Diagnóstico (' + pesos(r.montos.credito) + ').</p>' : '') +
           '<p>Para confirmarlo, transferí <b>' + pesos(r.montos.ahora) + '</b>' + (r.montos.saldo > 0 ? ' (la seña)' : '') + ' a:</p>' +
           '<p>Alias: <span class="dato">' + esc(t.alias) + '</span>' + (t.cbu ? '<br>' + esc(t.cbuEtiqueta || 'CBU') + ': <span class="dato">' + esc(t.cbu) + '</span>' : '') + (t.titular ? '<br>Titular: ' + esc(t.titular) : '') + '</p>' +
-          '<p>Y mandame el comprobante por <a href="' + WA + '?text=' + encodeURIComponent('Hola Fede, te mando el comprobante de mi ' + p.nombre + '.') + '">WhatsApp</a>. El turno queda guardado hasta el ' + esc(cuando(t.vence)) + '.</p>' +
+          '<p>Y mandame el comprobante por <a href="' + WA + '?text=' + encodeURIComponent('Hola Fede, te mando el comprobante de mi ' + p.nombre + '.') + '">WhatsApp</a>. ' + (fechas.length > 1 ? 'Quedan guardados' : 'El turno queda guardado') + ' hasta el ' + esc(cuando(t.vence)) + '.</p>' +
           '<p class="suave">También te mandé estos datos por mail.</p>');
       })
       .catch(function (e) {

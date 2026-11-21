@@ -1,10 +1,16 @@
 // GET /api/turnos?p=diagnostico → días con turnos libres (hora argentina).
-import { PRODUCTOS, calcularTurnos, json, leerAgenda, modoPrueba } from './_lib.js';
+// En los niveles, solo los horarios en los que entran los 8 encuentros semanales, con sus fechas.
+import { PRODUCTOS, SEMANAS_MAX_PACK, calcularTurnos, json, leerAgenda, modoPrueba, turnosDePack } from './_lib.js';
 
 export default async function handler(req, res) {
   const producto = String(req.query?.p || '');
-  if (!PRODUCTOS[producto]) return json(res, 400, { error: 'Propuesta desconocida.' });
+  const p = PRODUCTOS[producto];
+  if (!p) return json(res, 400, { error: 'Propuesta desconocida.' });
   try {
+    if (p.cantidad > 1) {
+      const a = await leerAgenda(SEMANAS_MAX_PACK);
+      return json(res, 200, { prueba: modoPrueba(), ...turnosDePack(producto, a) });
+    }
     const a = await leerAgenda();
     return json(res, 200, { prueba: modoPrueba(), dias: calcularTurnos(producto, a.disponibles || [], a.ocupados || [], a.feriados || []) });
   } catch (e) {

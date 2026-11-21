@@ -1,8 +1,8 @@
 // POST /api/reservar {p, inicio, nombre, email, whatsapp, medio, nota}
 // Retiene el turno en el calendario y, con tarjeta, arma el pago de Mercado Pago.
 import {
-  PRODUCTOS, RETENCION_TARJETA_MIN, RETENCION_TRANSFERENCIA_H, firmar, gas, json, leerCuerpo,
-  modoPrueba, montos, mp, nuevoId, sitio, turnoPlausible,
+  PRODUCTOS, RETENCION_TARJETA_MIN, RETENCION_TRANSFERENCIA_H, SEMANAS_MAX_PACK, calcularSerie, firmar, gas, json,
+  leerAgenda, leerCuerpo, modoPrueba, montos, mp, nuevoId, sitio, turnoPlausible,
 } from './_lib.js';
 
 const limpiar = (s, n) => String(s || '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, n);
@@ -26,29 +26,50 @@ export default async function handler(req, res) {
   if (!turnoPlausible(inicio)) return json(res, 400, { error: 'Ese horario ya no está disponible. Elegí otro.' });
 
   const id = nuevoId();
-  const m = montos(p, medio);
   const ahora = Date.now();
-  const expira = medio === 'tarjeta'
-    ? ahora + RETENCION_TARJETA_MIN * 60000
-    : Math.min(ahora + RETENCION_TRANSFERENCIA_H * 3600000, inicio - 3600000);
   const ver = firmar('ver', id);
 
-  if (modoPrueba()) return json(res, 200, { prueba: true, id, k: ver, medio, montos: m });
+  // Niveles: las 8 fechas salen del mismo día y horario semanal.
+  let inicios = [inicio];
+  if (p.cantidad > 1) {
+    const a = await leerAgenda(SEMANAS_MAX_PACK).catch(() => null);
+    const serie = a && calcularSerie(b.p, inicio, a.disponibles || [], a.ocupados || [], a.feriados || []);
+    if (!serie) return json(res, 409, { error: 'Ese horario ya no tiene lugar para los ' + p.cantidad + ' encuentros. Elegí otro.' });
+    inicios = serie;
+  }
+
+  // Crédito del Diagnóstico (30 días), si corresponde a esta propuesta.
+  let credito = 0;
+  if (p.credito && !modoPrueba()) {
+    try { credito = (await gas('credito', { email })).monto || 0; } catch (e) { console.error(e); }
+  }
+  const m = montos(p, medio, credito);
+  const expira = medio === 'tarjeta'
+    ? ahora + RETENCION_TARJETA_MIN * 60000
+    : Math.min(ahora + RETENCION_TRANSFERENCIA_H * 3600000, inicios[0] - 3600000);
+
+  if (modoPrueba()) return json(res, 200, { prueba: true, id, k: ver, medio, montos: m, fechas: inicios });
 
   try {
     const hold = await gas('retener', {
-      id, inicio, fin: inicio + p.duracion * 60000, expira,
-      reserva: { producto: b.p, productoNombre: p.nombre, nombre, email, whatsapp, nota, origen, medio, ...m },
+      id, expira,
+      inicio: inicios[0], fin: inicios[0] + p.duracion * 60000, // compatibilidad con la versión anterior de Apps Script
+      sesiones: inicios.map((s) => ({ inicio: s, fin: s + p.duracion * 60000 })),
+      reserva: {
+        producto: b.p, productoNombre: p.nombre, nombre, email, whatsapp, nota, origen, medio, duracion: p.duracion,
+        total: m.total, ahora: m.ahora, saldo: m.saldo, creditoUsado: m.credito || 0,
+      },
       confirmarUrl: `${sitio()}/api/confirmar?id=${id}&k=${firmar('confirmar', id)}`,
       verUrl: `${sitio()}/reservar/?id=${id}&k=${ver}`,
     });
     if (!hold.ok) return json(res, 409, { error: 'Ese horario se acaba de ocupar. Elegí otro.' });
 
     if (medio === 'transferencia') {
-      return json(res, 200, { id, k: ver, medio, montos: m, transferencia: hold.transferencia });
+      return json(res, 200, { id, k: ver, medio, montos: m, fechas: inicios, transferencia: hold.transferencia });
     }
 
-    const titulo = p.sena < 1 ? `${p.nombre} · seña del ${Math.round(p.sena * 100)} %` : p.nombre;
+    const titulo = (p.sena < 1 ? `${p.nombre} · seña del ${Math.round(p.sena * 100)} %` : p.nombre) +
+      (m.credito ? ' (con crédito del Diagnóstico)' : '');
     const pref = await mp('/checkout/preferences', {
       method: 'POST',
       body: JSON.stringify({
@@ -69,7 +90,7 @@ export default async function handler(req, res) {
         expiration_date_to: new Date(expira - 5 * 60000).toISOString(),
       }),
     });
-    return json(res, 200, { id, k: ver, medio, montos: m, pagar: pref.init_point });
+    return json(res, 200, { id, k: ver, medio, montos: m, fechas: inicios, pagar: pref.init_point });
   } catch (e) {
     console.error(e);
     try { await gas('liberar', { id }); } catch {}
