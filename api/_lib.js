@@ -275,23 +275,55 @@ export function planKit(producto, inicio, simMin, audicion, a) {
     intensivos.sort((x, y) => x - y);
   }
   // 3. Base: desde el inicio elegido, cada 1 o 2 semanas, antes del tramo intensivo.
+  // Si no entran de a uno por semana (feriados, vacaciones), se juntan dos en alguna semana
+  // (decisión de Fede, 21/11/2026): primero en las semanas que quedaron vacías, después
+  // un segundo encuentro en otro día de una semana que ya tiene uno.
   const base = [];
   const cantBase = p.cantidad - intensivos.length;
   if (cantBase > 0) {
     const finBase = lunesDe(Math.min(...sims, ...intensivos));
     const semanasBase = Math.floor((finBase - lunesDe(inicio)) / SEMANA);
-    if (semanasBase < cantBase) return null;
-    const paso = Math.min(2, Math.floor(semanasBase / cantBase));
+    if (semanasBase < 1) return null;
+    const paso = Math.max(1, Math.min(2, Math.floor(semanasBase / cantBase)));
     let w = 0;
     while (base.length < cantBase && lunesDe(inicio) + w * SEMANA < finBase) {
       const s = inicio + w * SEMANA;
       if (libreEn(a, s, p.duracion, usados)) { base.push(s); ocupa(s, p.duracion); w += paso; } else w += 1;
     }
+    if (base.length < cantBase) {
+      const hora = offsetEnSemana % DIA, diaElegido = Math.floor(offsetEnSemana / DIA);
+      const diaDe = (s) => Math.floor((s - lunesDe(s)) / DIA);
+      // Días de la semana (lunes 0 … viernes 4): primero el elegido, después los más cercanos.
+      const dias = [0, 1, 2, 3, 4].sort((x, y) => Math.abs(x - diaElegido) - Math.abs(y - diaElegido) || x - y);
+      const semanas = [];
+      for (let l = lunesDe(inicio); l < finBase; l += SEMANA) semanas.push(l);
+      for (const conUno of [false, true]) {
+        for (const l of semanas) {
+          if (base.length >= cantBase) break;
+          const ya = base.filter((s) => lunesDe(s) === l);
+          if (ya.length !== (conUno ? 1 : 0)) continue;
+          // Con uno ya puesto, el segundo va al menos a dos días de distancia si se puede.
+          const orden = conUno ? [...dias].sort((x, y) => (Math.abs(y - diaDe(ya[0])) >= 2) - (Math.abs(x - diaDe(ya[0])) >= 2)) : dias;
+          const s = orden.map((d) => l + d * DIA + hora)
+            .find((c) => c >= inicio && !ya.some((x) => diaDe(x) === diaDe(c)) && libreEn(a, c, p.duracion, usados));
+          if (s != null) { base.push(s); ocupa(s, p.duracion); }
+        }
+      }
+    }
     if (base.length < cantBase) return null;
   } else if (lunesDe(inicio) > lunesDe(intensivos[0])) return null;
   return { encuentros: [...base, ...intensivos].sort((x, y) => x - y), simulacros: sims };
 }
+// Si el Kit que corresponde no entra antes de la audición ni juntando encuentros, se ofrece
+// el más corto que sí entra, con su precio (decisión de Fede, 21/11/2026).
+export const KIT_MAS_CORTO = { 'kit-puente': 'kit-calma', 'kit-calma': 'kit-express' };
 export function turnosDeKit(producto, audicion, a) {
+  const primero = turnosDeUnKit(producto, audicion, a);
+  let kit = producto, r = primero;
+  while (!r.dias.length && KIT_MAS_CORTO[kit]) { kit = KIT_MAS_CORTO[kit]; r = turnosDeUnKit(kit, audicion, a); }
+  return r.dias.length ? { ...r, kit } : { ...primero, kit: producto };
+}
+function turnosDeUnKit(producto, audicion, a) {
   const dias = calcularTurnos(producto, a.disponibles || [], a.ocupados || [], a.feriados || []);
   const out = [], series = {}, sims = {};
   for (const d of dias) {

@@ -578,11 +578,25 @@
         $('kit-resultado').innerHTML = '<div class="caja"><p>Con menos de 3 semanas no llega a armarse un Kit completo.</p><p>Lo que sí podemos hacer es un <b>Encuentro a medida</b> sobre el material de tu audición.</p><p><a class="boton" href="?p=encuentro-a-medida">Reservar un Encuentro a medida</a></p></div>';
         return;
       }
-      var k = PRODUCTOS[kit];
       paso('Puso la fecha de audición', semanas + ' semanas · ' + kit);
-      $('kit-resultado').innerHTML = '<div class="opcion"><p class="suave">Faltan ' + semanas + ' semanas: te corresponde</p><h3>' + esc(k.nombre) + '</h3><p>' + esc(k.bajada) + '</p>' +
-        '<p class="precio">' + pesos(k.tarjeta) + ' · ' + pesos(k.transferencia) + ' con descuento por transferencia</p>' +
-        '<p style="margin-top:14px"><a class="boton" href="?p=' + kit + '&audicion=' + f + '">Elegir mis horarios</a></p></div>';
+      // Antes de mostrar el Kit, se revisa que entre en la agenda antes de la audición.
+      // Si no entra, la web ofrece el más corto que sí entra (decisión de Fede, 21/11/2026).
+      var boton = this.querySelector('button'); boton.disabled = true;
+      $('kit-resultado').innerHTML = '<p class="suave">Armando tu plan con mi agenda…</p>';
+      fetch('/api/turnos?p=' + kit + '&audicion=' + encodeURIComponent(f)).then(function (r) { return r.json(); }).then(function (r) {
+        boton.disabled = false;
+        if (r.error) throw new Error(r.error);
+        if (!r.dias || !r.dias.length) {
+          $('kit-resultado').innerHTML = '<div class="caja"><p>Con tu fecha y mi agenda de estas semanas no llego a armarte un Kit completo antes de la audición.</p><p>Escribime por <a href="' + WA + '?text=' + encodeURIComponent('Hola Fede, tengo una audición el ' + f + ' y quiero ver qué podemos armar.') + '">WhatsApp</a> y vemos qué podemos hacer para tu fecha.</p></div>';
+          return;
+        }
+        var real = r.kit || kit, k = PRODUCTOS[real];
+        var aviso = real !== kit ? '<p class="suave">Con tu fecha y mi agenda (feriados y vacaciones incluidos), el ' + esc(PRODUCTOS[kit].nombre.replace('Kit de Audición · ', 'Kit ')) + ' no llega a entrar completo antes de tu audición. Lo que entra es este:</p>'
+          : '<p class="suave">Faltan ' + semanas + ' semanas: te corresponde</p>';
+        $('kit-resultado').innerHTML = '<div class="opcion">' + aviso + '<h3>' + esc(k.nombre) + '</h3><p>' + esc(k.bajada) + '</p>' +
+          '<p class="precio">' + pesos(k.tarjeta) + ' · ' + pesos(k.transferencia) + ' con descuento por transferencia</p>' +
+          '<p style="margin-top:14px"><a class="boton" href="?p=' + real + '&audicion=' + f + '">Elegir mis horarios</a></p></div>';
+      }).catch(function (e) { boton.disabled = false; $('kit-resultado').innerHTML = '<p class="error">' + esc(e.message || 'No pude revisar la agenda. Probá de nuevo.') + '</p>'; });
     };
     return;
   }
@@ -648,6 +662,8 @@
     fetch('/api/turnos?p=' + encodeURIComponent(producto) + (audicion ? '&audicion=' + encodeURIComponent(audicion) : '')).then(function (r) { return r.json(); }).then(function (r) {
       if (r.prueba) $('aviso-prueba').hidden = false;
       if (r.error) throw new Error(r.error);
+      // Si el Kit del link ya no entra y la web propone uno más corto, se pasa a ese (con su precio).
+      if (p.kit && r.kit && r.kit !== producto && PRODUCTOS[r.kit]) { location.replace('?p=' + r.kit + '&audicion=' + encodeURIComponent(audicion)); return; }
       series = r.series || {}; sims = r.sims || {};
       if (p.kit && !r.dias.length) { $('cargando').hidden = true; $('error-turnos').innerHTML = 'No quedan horarios para armar el Kit antes de tu audición. Escribime por <a href="' + WA + '">WhatsApp</a> y lo vemos.'; $('error-turnos').hidden = false; return; }
       var dias = r.dias;
