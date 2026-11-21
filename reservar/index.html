@@ -54,6 +54,9 @@
   .candado::before { content: "🔒 "; }
   .intro-grupo { color: var(--texto-suave); font-size: 17px; margin-top: -6px; }
   .lista { margin: 4px 0 12px 22px; }
+  .cita { margin: 2px 4px 8px; padding-left: 16px; border-left: 2px solid var(--dorado-claro); font-style: italic; font-size: 17px; color: var(--texto); }
+  .cita cite { display: block; font-style: normal; font-size: 15px; color: var(--texto-suave); margin-top: 4px; }
+  .garantia { background: #fff; border: 1px dashed var(--dorado); border-radius: 6px; padding: 10px 14px; font-size: 16px; color: var(--texto); }
   .lista li + li { margin-top: 4px; }
 
   .dias { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 18px; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--linea) transparent; }
@@ -142,38 +145,47 @@
           <p class="etiqueta-opcion">Si es tu primera vez</p>
           <h3>Diagnóstico</h3>
           <p>El primer paso. En 30 minutos leés unos fragmentos cortos, de menos a más, y te llevás por escrito dónde estás parado y por dónde te conviene seguir.</p>
-          <p class="mas">Si después seguís con el Nivel 1, lo que pagaste se descuenta.</p>
+          <p class="precio">$54.400 · $50.048 con descuento por transferencia</p>
+          <p class="mas">Si en los 30 días siguientes arrancás un nivel, lo que pagaste se descuenta: el Diagnóstico te termina saliendo gratis.</p>
         </a>
+        <blockquote class="cita">«Como te veo un par, no me siento con vergüenza. Me siento cómodo.»<cite>Tenor del Coro Nacional de Música Argentina, en su primer encuentro</cite></blockquote>
 
         <h3 class="grupo">Si tenés una audición</h3>
         <a class="opcion" href="?p=kit">
           <h3>Kit de Audición</h3>
           <p>Para llegar a tu audición con un plan y sabiendo qué hacer si te equivocás. Encuentros cada semana y simulacros de audición antes de la fecha.</p>
-          <p class="mas">Con tu fecha te digo cuál va: Express, Calma o Puente.</p>
+          <p class="mas">Con tu fecha te digo cuál va (Express, Calma o Puente) y cuánto sale.</p>
         </a>
+        <blockquote class="cita">«Me generaba mucho estrés, sobre todo en las audiciones. Salía de los exámenes frustrada porque no podía estar segura de lo que estaba haciendo.»<cite>Mezzosoprano del Coro Estable del Teatro Argentino, sobre cómo leía antes</cite></blockquote>
 
         <h3 class="grupo">Navegar la Partitura</h3>
-        <p class="intro-grupo">Tres niveles de 8 encuentros, uno por semana, el mismo día y a la misma hora. Cada nivel tiene su bitácora y su garantía, y abre el siguiente.</p>
+        <p class="intro-grupo">Tres niveles de 8 encuentros, uno por semana, el mismo día y a la misma hora. Cada nivel tiene su bitácora y abre el siguiente.</p>
+        <p class="garantia"><b>La garantía de cada nivel:</b> si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.</p>
         <a class="opcion" href="?p=nivel-1">
           <p class="etiqueta-opcion">Nivel 1</p>
           <h3>Encontrar la casa</h3>
           <p>Para cuando leés por intuición, sin saber hacia dónde vas. Aprendés a sentir dónde está la casa (la tónica) antes de cantar y a reconocer hacia dónde quiere ir cada nota.</p>
+          <p class="precio">$538.000 los 8 encuentros · $494.960 con descuento por transferencia</p>
         </a>
         <a class="opcion cerrada" href="?p=nivel-2">
           <p class="etiqueta-opcion">Nivel 2 · <span class="candado">se abre al terminar el Nivel 1</span></p>
           <h3>El modo menor</h3>
           <p>Lo que ordenaste en el Nivel 1, ahora en menor: la tercera que cambia el color, el sexto que baja y las alteraciones que confunden. Y pasar de mayor a menor sin perder la casa.</p>
+          <p class="precio">$538.000 los 8 encuentros · $494.960 con descuento por transferencia</p>
         </a>
         <a class="opcion cerrada" href="?p=nivel-3">
           <p class="etiqueta-opcion">Nivel 3 · <span class="candado">se abre al terminar el Nivel 2</span></p>
           <h3>Todas las notas en su lugar</h3>
           <p>Completás la escala: los caminos que faltaban para volver a casa, la casa que se muda al tono relativo y la lectura con todo junto, en mayor y en menor.</p>
+          <p class="precio">$538.000 los 8 encuentros · $494.960 con descuento por transferencia</p>
         </a>
+        <blockquote class="cita">«Los encuentros me sirvieron para agilizar la práctica coral, la audioperceptiva y, finalmente, entrar en un coro profesional.»<cite>Soprano del Coro Estable de la Provincia de Tucumán</cite></blockquote>
 
         <h3 class="grupo">Para quienes ya trabajaron conmigo</h3>
         <a class="opcion" href="?p=club">
           <h3>Club de Lectura Musical</h3>
           <p>Para que lo que ya ordenaste no se oxide, con muy poco tiempo: lecturas con devolución en audio, un podcast y, si querés, media hora conmigo por mes.</p>
+          <p class="precio">$50.000 por mes con la promo de lanzamiento</p>
         </a>
       </div>
       <p class="duda">¿Necesitás algo puntual, como una obra que tenés que leer o una audición muy cercana? Está el <a href="?p=encuentro-a-medida">Encuentro a medida</a>.</p>
@@ -195,6 +207,7 @@
         <p><b>$50.000 por mes</b> con la promo de lanzamiento (después, $76.100). Se cobra solo cada mes con Mercado Pago y te das de baja cuando quieras desde tu cuenta, sin tener que explicar nada.</p>
         <p style="margin-top:18px"><a class="boton" href="https://mpago.la/2cSSFMo" rel="noopener">Suscribirme con Mercado Pago</a></p>
       </div>
+      <blockquote class="cita">«Comparto todo lo que decís, porque nos sucede.»<cite>Barítono del Coro Estable del Teatro Argentino, sobre el podcast del Club</cite></blockquote>
       <p class="duda">Si todavía no trabajamos juntos, el Club no es el primer paso: empezá por el <a href="?p=diagnostico">Diagnóstico</a>.</p>
       <p class="duda">¿Tenés una duda antes? <a href="https://wa.me/5491178165441?text=Hola%20Fede%2C%20tengo%20una%20duda%20sobre%20el%20Club.">Escribime</a>.</p>
     </section>
@@ -567,6 +580,9 @@
       ? 'Si necesitás mover algo, lo hacés vos desde ese mail, con 24 h de aviso y dentro de la misma semana (un cambio).'
       : 'Si necesitás mover un encuentro, lo hacés vos desde ese mail, con 24 h de aviso (hasta 2 cambios en el nivel).';
     document.querySelector('.despues li:first-child').textContent = 'Te llega un mail con todas tus fechas, el link de Zoom y un archivo para sumarlas a tu calendario.';
+    var li = document.createElement('li');
+    li.textContent = 'Reservar no te ata: si antes del primer encuentro te cambia algo, te devuelvo lo que pagaste (con tarjeta, menos la comisión de Mercado Pago).';
+    document.querySelector('.despues ul').appendChild(li);
     if (p.kit) $('texto-sena').textContent = 'Se paga al reservar. El plan se arma hacia tu audición: los encuentros van el mismo día y a la misma hora, y las últimas 4 semanas suman el simulacro del viernes. Todo antes de tu audición del ' + fmt(new Date(audicion + 'T12:00:00-03:00').getTime(), { day: 'numeric', month: 'long' }) + '.';
   }
 
