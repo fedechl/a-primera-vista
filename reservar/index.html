@@ -54,6 +54,28 @@
   .candado::before { content: "🔒 "; }
   .intro-grupo { color: var(--texto-suave); font-size: 17px; margin-top: -6px; }
   .lista { margin: 4px 0 12px 22px; }
+  .trio, .par, .col { display: grid; gap: 14px; }
+  .par > .col > .grupo:first-child { margin-top: 18px; }
+  @media (min-width: 960px) {
+    .contenedor { max-width: 1080px; padding: 0 32px; }
+    .portada .contenedor > * { max-width: 680px; }
+    #paso-elegir > h2, .intro-grupo, .garantia { max-width: 760px; }
+    .par { grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+    .par > .col > .grupo:first-child { margin-top: 0; }
+    .par > .col:first-child { padding-top: 47px; }
+    .trio { grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+    .trio .opcion { display: flex; flex-direction: column; }
+    .trio .opcion .precio { margin-top: auto; padding-top: 10px; }
+    #paso-club, #paso-acceso, #paso-audicion, #paso-fin { max-width: 700px; }
+    .dias { flex-wrap: wrap; overflow-x: visible; }
+    #paso-turno { max-width: 900px; }
+    #paso-datos form { grid-template-columns: minmax(0, 1fr) 380px; column-gap: 48px; align-items: start; }
+    #paso-datos form > * { grid-column: 1; }
+    #paso-datos form > #elegido { grid-column: 2; grid-row: 1 / span 6; position: sticky; top: 24px; }
+    #paso-datos form > .despues { grid-column: 2; grid-row: 7 / span 6; }
+    #paso-datos form > .boton { justify-self: start; }
+  }
+
   .cita { margin: 2px 4px 8px; padding-left: 16px; border-left: 2px solid var(--dorado-claro); font-style: italic; font-size: 17px; color: var(--texto); }
   .cita cite { display: block; font-style: normal; font-size: 15px; color: var(--texto-suave); margin-top: 4px; }
   .garantia { background: #fff; border: 1px dashed var(--dorado); border-radius: 6px; padding: 10px 14px; font-size: 16px; color: var(--texto); }
@@ -141,6 +163,8 @@
     <section id="paso-elegir" hidden>
       <h2>¿Por dónde empezás?</h2>
       <div class="opciones">
+        <div class="par">
+        <div class="col">
         <a class="opcion destacada" href="?p=diagnostico">
           <p class="etiqueta-opcion">Si es tu primera vez</p>
           <h3>Diagnóstico</h3>
@@ -149,6 +173,8 @@
           <p class="mas">Si en los 30 días siguientes arrancás un nivel, lo que pagaste se descuenta: el Diagnóstico te termina saliendo gratis.</p>
         </a>
         <blockquote class="cita">«Como te veo un par, no me siento con vergüenza. Me siento cómodo.»<cite>Tenor del Coro Nacional de Música Argentina, en su primer encuentro</cite></blockquote>
+        </div>
+        <div class="col">
 
         <h3 class="grupo">Si tenés una audición</h3>
         <a class="opcion" href="?p=kit">
@@ -157,10 +183,13 @@
           <p class="mas">Con tu fecha te digo cuál va (Express, Calma o Puente) y cuánto sale.</p>
         </a>
         <blockquote class="cita">«Me generaba mucho estrés, sobre todo en las audiciones. Salía de los exámenes frustrada porque no podía estar segura de lo que estaba haciendo.»<cite>Mezzosoprano del Coro Estable del Teatro Argentino, sobre cómo leía antes</cite></blockquote>
+        </div>
+        </div>
 
         <h3 class="grupo">Navegar la Partitura</h3>
         <p class="intro-grupo">Tres niveles de 8 encuentros, uno por semana, el mismo día y a la misma hora. Cada nivel tiene su bitácora y abre el siguiente.</p>
         <p class="garantia"><b>La garantía de cada nivel:</b> si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.</p>
+        <div class="trio">
         <a class="opcion" href="?p=nivel-1">
           <p class="etiqueta-opcion">Nivel 1</p>
           <h3>Encontrar la casa</h3>
@@ -179,6 +208,7 @@
           <p>Completás la escala: los caminos que faltaban para volver a casa, la casa que se muda al tono relativo y la lectura con todo junto, en mayor y en menor.</p>
           <p class="precio">$538.000 los 8 encuentros · $494.960 con descuento por transferencia</p>
         </a>
+        </div>
         <blockquote class="cita">«Los encuentros me sirvieron para agilizar la práctica coral, la audioperceptiva y, finalmente, entrar en un coro profesional.»<cite>Soprano del Coro Estable de la Provincia de Tucumán</cite></blockquote>
 
         <h3 class="grupo">Para quienes ya trabajaron conmigo</h3>
