@@ -52,6 +52,7 @@
   .opcion.cerrada h3 { color: var(--texto-suave); }
   .candado { color: var(--texto-suave); font-weight: 500; text-transform: none; letter-spacing: 0; }
   .candado::before { content: "🔒 "; }
+  .etiqueta-opcion .candado { margin-left: 6px; }
   .intro-grupo { color: var(--texto-suave); font-size: 17px; margin-top: -6px; }
   .lista { margin: 4px 0 12px 22px; }
   .trio, .par, .col { display: grid; gap: 14px; }
@@ -65,6 +66,7 @@
     .trio .opcion { display: flex; flex-direction: column; }
     .trio .opcion .precio { margin-top: auto; padding-top: 10px; }
     .trio .candado { display: block; }
+    .trio .opcion h3 { font-size: 24px; }
     #paso-club, #paso-acceso, #paso-audicion, #paso-fin { max-width: 700px; }
     .dias { flex-wrap: wrap; overflow-x: visible; }
     #paso-turno { max-width: 900px; }
@@ -196,13 +198,13 @@
           <p class="precio">$538.000 los 8 encuentros · $494.960 con descuento por transferencia</p>
         </a>
         <a class="opcion cerrada" href="?p=nivel-2">
-          <p class="etiqueta-opcion">Nivel 2 · <span class="candado">se abre al terminar el Nivel 1</span></p>
+          <p class="etiqueta-opcion">Nivel 2 <span class="candado">se abre al terminar el Nivel 1</span></p>
           <h3>El modo menor</h3>
           <p>Lo que ordenaste en el Nivel 1, ahora en menor: la tercera que cambia el color, el sexto que baja y las alteraciones que confunden. Y pasar de mayor a menor sin perder la casa.</p>
           <p class="precio">$538.000 los 8 encuentros · $494.960 con descuento por transferencia</p>
         </a>
         <a class="opcion cerrada" href="?p=nivel-3">
-          <p class="etiqueta-opcion">Nivel 3 · <span class="candado">se abre al terminar el Nivel 2</span></p>
+          <p class="etiqueta-opcion">Nivel 3 <span class="candado">se abre al terminar el Nivel 2</span></p>
           <h3>Todas las notas en su lugar</h3>
           <p>Completás la escala: los caminos que faltaban para volver a casa, la casa que se muda al tono relativo y la lectura con todo junto, en mayor y en menor.</p>
           <p class="precio">$538.000 los 8 encuentros · $494.960 con descuento por transferencia</p>
