@@ -482,5 +482,13 @@ if(!window.APV_PRUEBA){var s=document.createElement('script');s.defer=true;s.src
 })();
 </script>
 
+<script>
+/* Origen de la primera visita (30 días): marca ?o= del QR, utm_source de una pieza o el sitio de donde vino.
+   La página de reservas lo usa para Captación · Reservas web. Decisión de Fede, 21/11/2026. */
+(function(){try{var k='apv_origen_v2',ya=JSON.parse(localStorage.getItem(k)||'null');if(ya&&Date.now()-ya.t<2592000000)return;
+var q=new URLSearchParams(location.search),o=(q.get('o')||q.get('utm_source')||'').toLowerCase().replace(/[^a-z0-9._-]/g,'').slice(0,40);
+if(!o&&document.referrer){var h=new URL(document.referrer).hostname.replace(/^www\./,'');if(!/aprimeravista|leeraprimeravista/.test(h))o=h;}
+localStorage.setItem(k,JSON.stringify({o:o||'directo',t:Date.now()}));}catch(e){}})();
+</script>
 </body>
 </html>

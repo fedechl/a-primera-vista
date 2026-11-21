@@ -408,8 +408,13 @@
   try {
     sesion = sessionStorage.getItem('apv_sesion') || Math.random().toString(36).slice(2, 12);
     sessionStorage.setItem('apv_sesion', sesion);
-    origen = sessionStorage.getItem('apv_origen') || q.get('utm_source') || (document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : '') || 'directo';
-    if (/aprimeravista|leeraprimeravista/.test(origen) && !sessionStorage.getItem('apv_origen')) origen = 'web propia';
+    // Primera visita de los últimos 30 días (la guardan también la landing, /kit y el autodiagnóstico): marca ?o=, utm_source o sitio de origen.
+    var guardado = null; try { guardado = JSON.parse(localStorage.getItem('apv_origen_v2') || 'null'); } catch (e) {}
+    if (guardado && Date.now() - guardado.t > 2592000000) guardado = null;
+    var marca = (q.get('o') || q.get('utm_source') || '').toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 40);
+    var ref = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : '';
+    origen = sessionStorage.getItem('apv_origen') || (guardado && guardado.o) || marca || (ref && !/aprimeravista|leeraprimeravista/.test(ref) ? ref : '') || (ref ? 'web propia' : 'directo');
+    if (!guardado) { try { localStorage.setItem('apv_origen_v2', JSON.stringify({ o: marca || (ref && !/aprimeravista|leeraprimeravista/.test(ref) ? ref : 'directo'), t: Date.now() })); } catch (e) {} }
     sessionStorage.setItem('apv_origen', origen);
   } catch (e) { sesion = sesion || Math.random().toString(36).slice(2, 12); }
   var paso = function (nombre, detalle) {
