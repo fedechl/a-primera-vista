@@ -331,6 +331,10 @@ function mover(b) {
     var fin = ini + (new Date(ev.end.dateTime).getTime() - antes.getTime());
     if (r.mismaSemana && semanaDe(ini) !== semanaDe(antes.getTime())) return { ok: false, motivo: 'En el Kit, los cambios son dentro de la misma semana. Elegí otro día de esa semana.' };
     if (r.audicion && ini >= Number(r.audicion)) return { ok: false, motivo: 'Ese horario queda después de tu audición. Elegí otro.' };
+    // En los niveles, uno por semana: no se juntan dos encuentros en la misma semana.
+    if (/^nivel-/.test(r.producto) && evs.some(function (x) { return x.id !== ev.id && semanaDe(new Date(x.start.dateTime).getTime()) === semanaDe(ini); })) {
+      return { ok: false, motivo: 'Esa semana ya tenés otro encuentro del nivel. Elegí un día de otra semana.' };
+    }
     if (!libres([{ inicio: ini, fin: fin }], b.id)) return { ok: false, motivo: 'Ese horario se acaba de ocupar. Elegí otro.' };
     if (evs.some(function (x) { return x.id !== ev.id && ini < new Date(x.end.dateTime).getTime() && fin > new Date(x.start.dateTime).getTime(); })) {
       return { ok: false, motivo: 'Ese horario choca con otro de tus encuentros. Elegí otro.' };
