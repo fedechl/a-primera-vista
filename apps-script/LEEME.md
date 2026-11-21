@@ -22,7 +22,7 @@ Precios y horarios: `api/_lib.js` (y los textos de `reservar/index.html`). Si ca
 | `GAS_SECRET` | La clave que deja `instalar()` en el registro de Apps Script |
 | `MP_ACCESS_TOKEN` | Access token de producción de Mercado Pago |
 | `ZOOM_URL` | Link de la sala fija de Zoom |
-| `TRANSFER_ALIAS`, `TRANSFER_CBU`, `TRANSFER_TITULAR` | Datos para transferir |
+| `TRANSFER_ALIAS`, `TRANSFER_CBU`, `TRANSFER_TITULAR`, `TRANSFER_CBU_ETIQUETA` | Datos para transferir (la etiqueta es «CBU» o «CVU») |
 | `AVISOS_EMAIL` | Mail de Fede para los avisos |
 | `MUSE_EMAIL` | Casilla de AgentMail de Muse |
 | `VENTAS_SHEET_ID` | ID de 02 · Métricas de impacto |

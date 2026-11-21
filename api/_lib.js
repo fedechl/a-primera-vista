@@ -64,6 +64,7 @@ export function cfg() {
     zoom: env('ZOOM_URL'),
     alias: env('TRANSFER_ALIAS'),
     cbu: env('TRANSFER_CBU'),
+    cbuEtiqueta: env('TRANSFER_CBU_ETIQUETA', 'CBU'),
     titular: env('TRANSFER_TITULAR'),
     avisos: env('AVISOS_EMAIL'),
     muse: env('MUSE_EMAIL'),

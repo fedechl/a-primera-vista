@@ -163,7 +163,7 @@ function retener(b) {
   var c = b.cfg || {}, rr = b.reserva;
   var transferencia = null;
   if (rr.medio === 'transferencia') {
-    transferencia = { alias: c.alias, cbu: c.cbu, titular: c.titular, monto: rr.ahora, vence: Number(b.expira) };
+    transferencia = { alias: c.alias, cbu: c.cbu, cbuEtiqueta: c.cbuEtiqueta || 'CBU', titular: c.titular, monto: rr.ahora, vence: Number(b.expira) };
     mailMusicoTransferencia(rr, b, c);
     mailAvisoTransferencia(rr, b, c);
   }
@@ -355,7 +355,7 @@ function mailMusicoTransferencia(r, b, c) {
     '<p>Hola, ' + primerNombre(r) + '.</p>' +
     '<p>Te guardé el turno del <b>' + fechaLarga(new Date(Number(b.inicio))) + '</b> para tu ' + r.productoNombre + '.</p>' +
     '<p>Para confirmarlo, transferí <b>' + pesos(r.ahora) + '</b>' + (r.saldo > 0 ? ' (la seña)' : '') + ' a:</p>' +
-    '<p>Alias: <b>' + (c.alias || '') + '</b><br>' + (c.cbu ? 'CBU: ' + c.cbu + '<br>' : '') + (c.titular ? 'Titular: ' + c.titular : '') + '</p>' +
+    '<p>Alias: <b>' + (c.alias || '') + '</b><br>' + (c.cbu ? (c.cbuEtiqueta || 'CBU') + ': ' + c.cbu + '<br>' : '') + (c.titular ? 'Titular: ' + c.titular : '') + '</p>' +
     '<p>Y mandame el comprobante por WhatsApp. El turno queda guardado hasta el ' + fechaLarga(new Date(Number(b.expira))) + '.</p>');
 }
 function mailAvisoTransferencia(r, b, c) {

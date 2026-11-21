@@ -305,7 +305,7 @@
         var t = r.transferencia || {};
         fin('<p><b>Te guardé el turno.</b> ' + esc(p.nombre) + ': ' + esc(cuando(elegido)) + '.</p>' +
           '<p>Para confirmarlo, transferí <b>' + pesos(r.montos.ahora) + '</b>' + (r.montos.saldo > 0 ? ' (la seña)' : '') + ' a:</p>' +
-          '<p>Alias: <span class="dato">' + esc(t.alias) + '</span>' + (t.cbu ? '<br>CBU: <span class="dato">' + esc(t.cbu) + '</span>' : '') + (t.titular ? '<br>Titular: ' + esc(t.titular) : '') + '</p>' +
+          '<p>Alias: <span class="dato">' + esc(t.alias) + '</span>' + (t.cbu ? '<br>' + esc(t.cbuEtiqueta || 'CBU') + ': <span class="dato">' + esc(t.cbu) + '</span>' : '') + (t.titular ? '<br>Titular: ' + esc(t.titular) : '') + '</p>' +
           '<p>Y mandame el comprobante por <a href="' + WA + '?text=' + encodeURIComponent('Hola Fede, te mando el comprobante de mi ' + p.nombre + '.') + '">WhatsApp</a>. El turno queda guardado hasta el ' + esc(cuando(t.vence)) + '.</p>' +
           '<p class="suave">También te mandé estos datos por mail.</p>');
       })
