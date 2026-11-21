@@ -62,7 +62,7 @@ function doPost(e) {
     // Las tareas automáticas (limpiar, recordatorios) no reciben la configuración: queda guardada la última.
     if (b.cfg) PropertiesService.getScriptProperties().setProperty('CFG', JSON.stringify({ muse: b.cfg.muse, avisos: b.cfg.avisos, ventas: b.cfg.ventas, sitio: b.cfg.sitio, whatsapp: b.cfg.whatsapp }));
     var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito,
-      habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar, evento: evento };
+      habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar, evento: evento, accesoPorMail: accesoPorMail };
     if (!acciones[b.accion]) throw new Error('acción desconocida');
     salida = acciones[b.accion](b);
   } catch (err) {
@@ -212,6 +212,7 @@ function retener(b) {
   var lock = LockService.getScriptLock();
   lock.waitLock(25000);
   try {
+    if (reservasSinPagar(r) >= 2) return { ok: false, tope: true };
     if (!libres(sesiones)) return { ok: false };
     sesiones.forEach(function (x, i) {
       Calendar.Events.insert({
@@ -247,6 +248,23 @@ function reservaParaGuardar(r) {
   if (js.length > 1000 && x.nota) { x.nota = x.nota.slice(0, Math.max(0, x.nota.length - (js.length - 1000) - 3)) + '…'; js = JSON.stringify(x); }
   if (js.length > 1000) { delete x.nota; delete x.origenWeb; delete x.sesion; js = JSON.stringify(x); }
   return js;
+}
+
+// Tope: nadie tiene más de 2 reservas esperando el pago a la vez (mismo mail o mismo WhatsApp).
+// Evita que alguien bloquee la agenda con reservas que no paga (21/11/2026).
+function reservasSinPagar(r) {
+  var mail = String(r.email || '').trim().toLowerCase(), wa = String(r.whatsapp || '').replace(/\D/g, '');
+  var res = Calendar.Events.list('primary', { privateExtendedProperty: 'apv_estado=pendiente', timeMin: new Date(Date.now() - 86400000).toISOString(), singleEvents: true, maxResults: 250 });
+  var ids = {};
+  (res.items || []).forEach(function (ev) {
+    var p = ev.extendedProperties && ev.extendedProperties.private; if (!p || ids[p.apv_id]) return;
+    if (Number(p.apv_expira) < Date.now()) return;
+    try {
+      var x = JSON.parse(p.apv_reserva);
+      if (String(x.email || '').toLowerCase() === mail || (wa.length >= 8 && String(x.whatsapp || '').replace(/\D/g, '') === wa)) ids[p.apv_id] = true;
+    } catch (e) {}
+  });
+  return Object.keys(ids).length;
 }
 
 function confirmar(b) {
@@ -491,6 +509,25 @@ function pedirAcceso(b) {
     '<p>Si no corresponde, no hagas nada.</p>');
   return { ok: true };
 }
+// Acceso a los Niveles 2 y 3 por mail: la pantalla no dice si el mail es de un cliente; la respuesta llega al mail.
+// Un mail por dirección cada 10 minutos (21/11/2026).
+function accesoPorMail(b) {
+  var nivel = Number(b.nivel), email = String(b.email || '').trim().toLowerCase();
+  var cache = CacheService.getScriptCache(), clave = 'acceso:' + email + ':' + nivel;
+  if (cache.get(clave)) return { ok: true };
+  cache.put(clave, '1', 600);
+  if (habilitado({ email: email, nivel: nivel, cfg: b.cfg }).ok) {
+    enviar(email, 'Tu link para reservar el Nivel ' + nivel,
+      '<p>Hola.</p><p>Acá está tu link para reservar el Nivel ' + nivel + ' de Navegar la Partitura: <a href="' + b.reservarUrl + '">reservar el Nivel ' + nivel + '</a>.</p>' +
+      '<p>Usá este mismo mail al reservar.</p>');
+  } else {
+    enviar(email, 'Nivel ' + nivel + ': no encuentro tu Nivel ' + (nivel - 1) + ' con este mail',
+      '<p>Hola.</p><p>Con este mail no encuentro tu Nivel ' + (nivel - 1) + ' de Navegar la Partitura.</p>' +
+      '<p>Si lo hiciste con otro mail, probá con ese en <a href="' + b.volverUrl + '">la página de reservas</a>. Si lo hiciste antes de que existiera la página, tocá acá y le aviso a Fede para que te habilite: <a href="' + b.pedirUrl + '">pedir acceso al Nivel ' + nivel + '</a>.</p>');
+  }
+  return { ok: true };
+}
+
 function habilitar(b) {
   var nivel = Number(b.nivel);
   var ya = habilitado(b).ok;

@@ -686,36 +686,56 @@
     }).catch(function (e) { paso('Error', 'horarios: ' + (e.message || '')); $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
   }
 
-  // Niveles 2 y 3: primero el mail, para ver si ya hizo el nivel anterior.
+  // Niveles 2 y 3: se abren al terminar el anterior. La respuesta va al mail del músico (la pantalla no dice
+  // si un mail es de un cliente); desde el link del mail se elige el horario o se pide acceso (21/11/2026).
   if (p.requiere) {
     var nAnt = p.requiere, pidiendo = false;
-    $('acceso-texto').innerHTML = '<p>El Nivel ' + (nAnt + 1) + ' sigue donde termina el Nivel ' + nAnt + ': por eso se abre cuando lo terminás.</p>' +
-      '<p>Poné el mail con el que hiciste el Nivel ' + nAnt + ' y elegís tus horarios.</p>';
-    mostrar('paso-acceso');
+    var postAcceso = function (cuerpo) {
+      return fetch('/api/acceso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) })
+        .then(function (r) { return r.json(); }).then(function (r) { if (r.error) throw new Error(r.error); if (r.prueba) $('aviso-prueba').hidden = false; return r; });
+    };
+    var errorAcceso = function (e) { $('enviar-acceso').disabled = false; $('error-acceso').textContent = e.message || 'Algo falló. Probá de nuevo.'; $('error-acceso').hidden = false; };
+    if (q.get('acceso') && q.get('k')) {
+      // Llegó desde el link del mail: se confirma y se muestran los horarios.
+      var mailLink = q.get('acceso');
+      $('acceso-texto').innerHTML = '<p>Revisando tu acceso…</p>';
+      $('form-acceso').hidden = true;
+      mostrar('paso-acceso');
+      postAcceso({ accion: 'verificar', p: producto, email: mailLink, k: q.get('k') }).then(function (r) {
+        paso('Revisó acceso', r.ok ? 'habilitado' : 'no encontrado');
+        if (r.ok) { desdeAcceso = r.desde || 0; $('form').email.value = mailLink; cargarTurnos(); return; }
+        $('acceso-texto').innerHTML = '<p>No encuentro tu Nivel ' + nAnt + ' con ' + esc(mailLink) + '. Escribime por <a href="' + WA + '">WhatsApp</a> y lo vemos.</p>';
+      }).catch(function (e) { $('acceso-texto').innerHTML = '<p>' + esc(e.message) + '</p>'; });
+    } else if (q.get('pedir') && q.get('k')) {
+      // Llegó desde el link «pedir acceso» del mail: deja su nombre y a Fede le llega el botón para habilitarlo.
+      pidiendo = true;
+      $('acceso-texto').innerHTML = '<p>Dejame tu nombre y te habilito el Nivel ' + (nAnt + 1) + ': te llega un mail a ' + esc(q.get('pedir')) + ' con el link para reservar.</p>';
+      $('form-acceso').email.value = q.get('pedir'); $('form-acceso').email.readOnly = true;
+      $('campo-nombre-acceso').hidden = false; $('enviar-acceso').textContent = 'Pedir que me habilites';
+      mostrar('paso-acceso');
+    } else {
+      $('acceso-texto').innerHTML = '<p>El Nivel ' + (nAnt + 1) + ' sigue donde termina el Nivel ' + nAnt + ': por eso se abre cuando lo terminás.</p>' +
+        '<p>Poné el mail con el que hiciste el Nivel ' + nAnt + ' y te mando el link para elegir tus horarios.</p>';
+      mostrar('paso-acceso');
+    }
     $('form-acceso').onsubmit = function (ev) {
       ev.preventDefault();
       var f = ev.target, email = f.email.value.trim();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('error-acceso').textContent = 'Revisá tu mail.'; $('error-acceso').hidden = false; return; }
       if (pidiendo && !f.nombre.value.trim()) { $('error-acceso').textContent = 'Poné tu nombre, así sé quién sos.'; $('error-acceso').hidden = false; return; }
       $('enviar-acceso').disabled = true; $('error-acceso').hidden = true;
-      fetch('/api/acceso', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: pidiendo ? 'pedir' : 'verificar', p: producto, email: email, nombre: f.nombre.value }) })
-        .then(function (r) { return r.json(); }).then(function (r) {
-          $('enviar-acceso').disabled = false;
-          if (r.error) throw new Error(r.error);
-          if (r.prueba) $('aviso-prueba').hidden = false;
-          paso(pidiendo ? 'Pidió acceso' : 'Revisó acceso', pidiendo ? '' : (r.ok ? 'habilitado' : 'no encontrado'));
-          if (pidiendo) {
-            fin(r.yaEsta ? '<p>Ya estás habilitado: <a href="?p=' + producto + '">reservá tu Nivel ' + (nAnt + 1) + '</a> con ese mail.</p>'
-              : '<p><b>Listo, ya me llegó tu pedido.</b></p><p>Lo reviso y, apenas te habilito, te llega un mail a ' + esc(email) + ' con el link para reservar el Nivel ' + (nAnt + 1) + '.</p>');
-            return;
-          }
-          if (r.ok) { desdeAcceso = r.desde || 0; $('form').email.value = email; cargarTurnos(); return; }
-          pidiendo = true;
-          $('acceso-texto').innerHTML = '<p>No encuentro un Nivel ' + nAnt + ' con ' + esc(email) + '.</p>' +
-            '<p>Si lo hiciste con otro mail, probá con ese. Si lo hiciste antes de que existiera esta página, dejame tu nombre y te habilito yo: te llega un mail con el link para reservar.</p>';
-          $('campo-nombre-acceso').hidden = false; $('enviar-acceso').textContent = 'Pedir que me habilites';
-          f.email.oninput = function () { pidiendo = false; $('campo-nombre-acceso').hidden = true; $('enviar-acceso').textContent = 'Seguir'; };
-        }).catch(function (e) { $('enviar-acceso').disabled = false; $('error-acceso').textContent = e.message || 'Algo falló. Probá de nuevo.'; $('error-acceso').hidden = false; });
+      if (pidiendo) {
+        postAcceso({ accion: 'pedir', p: producto, email: email, nombre: f.nombre.value, k: q.get('k') }).then(function (r) {
+          paso('Pidió acceso');
+          fin(r.yaEsta ? '<p>Ya estás habilitado: revisá tu mail, ahí está el link para reservar tu Nivel ' + (nAnt + 1) + '.</p>'
+            : '<p><b>Listo, ya me llegó tu pedido.</b></p><p>Lo reviso y, apenas te habilito, te llega un mail a ' + esc(email) + ' con el link para reservar el Nivel ' + (nAnt + 1) + '.</p>');
+        }).catch(errorAcceso);
+        return;
+      }
+      postAcceso({ accion: 'verificar', p: producto, email: email }).then(function () {
+        paso('Revisó acceso', 'mail enviado');
+        fin('<p><b>Te mandé un mail a ' + esc(email) + '.</b></p><p>Ahí está el link para seguir: si encuentro tu Nivel ' + nAnt + ', para elegir tus horarios; si no, para pedirme que te habilite.</p><p class="suave">Si no te llega en unos minutos, fijate en spam o escribime por <a href="' + WA + '">WhatsApp</a>.</p>');
+      }).catch(errorAcceso);
     };
   } else {
     cargarTurnos();

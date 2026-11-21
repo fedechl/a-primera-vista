@@ -87,6 +87,7 @@ export default async function handler(req, res) {
       confirmarUrl: `${sitio()}/api/confirmar?id=${id}&k=${firmar('confirmar', id)}`,
       verUrl: `${sitio()}/reservar/?id=${id}&k=${ver}`,
     });
+    if (hold.tope) return json(res, 429, { error: 'Ya tenés 2 reservas esperando el pago. Completá el pago de una (o esperá a que se libere) y volvé a reservar. Cualquier cosa, escribime por WhatsApp.' });
     if (!hold.ok) return json(res, 409, { error: 'Ese horario se acaba de ocupar. Elegí otro.' });
 
     if (medio === 'transferencia') {

@@ -1,6 +1,7 @@
 // Acceso a los Niveles 2 y 3 de Navegar la Partitura: se reservan al terminar el nivel anterior.
-// POST {accion:'verificar', p, email}          → { ok, desde } (desde: fin del nivel anterior, si se hizo por la web)
-// POST {accion:'pedir', p, email, nombre}      → le llega a Fede un mail con un link para habilitarlo
+// POST {accion:'verificar', p, email}          → le llega al músico un mail: link para reservar o para pedir acceso
+// POST {accion:'verificar', p, email, k}       → desde ese link: { ok, desde } (desde: fin del nivel anterior)
+// POST {accion:'pedir', p, email, nombre, k}   → desde el link del mail: le llega a Fede el botón para habilitarlo
 // GET  ?email=…&n=…&nombre=…&k=…               → el link de ese mail: muestra un botón (POST) para habilitar
 import { PRODUCTOS, firmar, firmaValida, gas, json, leerCuerpo, modoPrueba, sitio } from './_lib.js';
 
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
 <form method="post"><button style="font:inherit;font-weight:600;background:#CD9E34;color:#031F41;border:0;border-radius:999px;padding:14px 28px">Sí, habilitar</button></form><p>`));
     }
     try {
-      const r = await gas('habilitar', { email, nombre, nivel: n, reservarUrl: `${sitio()}/reservar/?p=nivel-${n}` });
+      const r = await gas('habilitar', { email, nombre, nivel: n, reservarUrl: `${sitio()}/reservar/?p=nivel-${n}&acceso=${encodeURIComponent(email)}&k=${firmar('acceso', email + '|' + n)}` });
       return res.end(pagina('Listo, habilitado', r.yaEstaba
         ? `${esc(nombre || email)} ya estaba habilitado. Le volvió a llegar el link para reservar.`
         : `A ${esc(nombre || email)} le llegó un mail con el link para reservar el Nivel ${n}.`));
@@ -49,17 +50,32 @@ export default async function handler(req, res) {
   if (modoPrueba()) return json(res, 200, { ok: true, prueba: true, desde: 0 });
 
   try {
+    const clave = email + '|' + nivel;
+    // Pedir acceso: solo desde el link del mail (así nadie le llena la casilla a Fede).
     if (b.accion === 'pedir') {
+      if (!firmaValida('pedir', clave, b.k)) return json(res, 403, { error: 'Este link no es válido. Volvé a poner tu mail en la página de reservas.' });
       const nombre = limpiar(b.nombre, 80);
       if (!nombre) return json(res, 400, { error: 'Falta tu nombre.' });
-      const k = firmar('habilitar', email + '|' + nivel);
+      const k = firmar('habilitar', clave);
       const habilitarUrl = `${sitio()}/api/acceso?email=${encodeURIComponent(email)}&n=${nivel}&nombre=${encodeURIComponent(nombre)}&k=${k}`;
       const r = await gas('pedirAcceso', { email, nombre, nivel, habilitarUrl });
       return json(res, 200, { ok: true, yaEsta: !!r.yaEsta });
     }
-    const r = await gas('habilitado', { email, nivel });
-    if (r.error) throw new Error(r.error);
-    return json(res, 200, { ok: !!r.ok, desde: r.desde || 0 });
+    // Desde el link del mail «Tu link para reservar»: ahí sí se confirma en pantalla.
+    if (b.k) {
+      if (!firmaValida('acceso', clave, b.k)) return json(res, 403, { error: 'Este link no es válido. Volvé a poner tu mail.' });
+      const r = await gas('habilitado', { email, nivel });
+      if (r.error) throw new Error(r.error);
+      return json(res, 200, { ok: !!r.ok, desde: r.desde || 0 });
+    }
+    // Sin link: la respuesta va al mail, la pantalla no dice si es cliente o no (21/11/2026).
+    const base = `${sitio()}/reservar/?p=nivel-${nivel}`;
+    await gas('accesoPorMail', {
+      email, nivel, volverUrl: base,
+      reservarUrl: `${base}&acceso=${encodeURIComponent(email)}&k=${firmar('acceso', clave)}`,
+      pedirUrl: `${base}&pedir=${encodeURIComponent(email)}&k=${firmar('pedir', clave)}`,
+    });
+    return json(res, 200, { ok: true, enviado: true });
   } catch (e) {
     console.error(e);
     return json(res, 502, { error: 'No pude revisarlo ahora. Probá de nuevo en un rato.' });
