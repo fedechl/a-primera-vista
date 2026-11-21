@@ -101,12 +101,10 @@ function ocupado(b) {
         if (ev.transparency === 'transparent') return;
         var yo = (ev.attendees || []).filter(function (a) { return a.self; })[0];
         if (yo && yo.responseStatus === 'declined') return;
-        var s, f;
-        if (ev.start.dateTime) {
-          s = new Date(ev.start.dateTime).getTime(); f = new Date(ev.end.dateTime).getTime();
-        } else { // evento de día completo marcado como ocupado (vacaciones, viajes)
-          s = new Date(ev.start.date + 'T00:00:00-03:00').getTime(); f = new Date(ev.end.date + 'T00:00:00-03:00').getTime();
-        }
+        // Los eventos de día completo (cumpleaños, recordatorios) no bloquean: los días libres
+        // y las vacaciones se manejan sacando el «Disponible» de APV · Disponibilidad.
+        if (!ev.start.dateTime) return;
+        var s = new Date(ev.start.dateTime).getTime(), f = new Date(ev.end.dateTime).getTime();
         if (ev.location && !/zoom|meet\.google|https?:|virtual|online/i.test(ev.location)) {
           s -= MARGEN_TRASLADO_MIN * 60000; f += MARGEN_TRASLADO_MIN * 60000;
         }
