@@ -223,7 +223,7 @@ function retener(b) {
         reminders: { useDefault: false, overrides: [] },
         extendedProperties: { private: {
           apv_id: b.id, apv_n: String(x.n), apv_tipo: x.tipo, apv_estado: 'pendiente', apv_expira: String(b.expira),
-          apv_reserva: JSON.stringify(r).slice(0, 1000), apv_ver: b.verUrl || '',
+          apv_reserva: reservaParaGuardar(r), apv_ver: b.verUrl || '',
         } },
       }, 'primary');
     });
@@ -238,6 +238,15 @@ function retener(b) {
     mailAvisoTransferencia(r, b, c, sesiones);
   }
   return { ok: true, transferencia: transferencia };
+}
+
+// El calendario guarda hasta ~1.000 caracteres por dato. Si no entra, se acorta la nota del músico
+// (completa en la descripción del evento): nunca se corta el JSON, porque después no se podría leer.
+function reservaParaGuardar(r) {
+  var x = JSON.parse(JSON.stringify(r)), js = JSON.stringify(x);
+  if (js.length > 1000 && x.nota) { x.nota = x.nota.slice(0, Math.max(0, x.nota.length - (js.length - 1000) - 3)) + '…'; js = JSON.stringify(x); }
+  if (js.length > 1000) { delete x.nota; delete x.origenWeb; delete x.sesion; js = JSON.stringify(x); }
+  return js;
 }
 
 function confirmar(b) {
@@ -533,7 +542,7 @@ function cargarVenta(r, pago, c, id) {
     var origen = r.origen === 'Ya trabajé con Fede' ? 'Músico pasado' : (r.origen || '');
     var monto = pago.neto || pago.monto || r.ahora;
     var notas = 'Reserva web (T43), código ' + id + ' · medio: ' + (pago.medio || r.medio) + (pago.mpId ? ', op. MP ' + pago.mpId : '') +
-      (r.creditoUsado ? ' · crédito del Diagnóstico aplicado: ' + pesos(r.creditoUsado) : '') +
+      (r.creditoUsado ? ' · crédito del ' + (r.creditoOrigen || 'Diagnóstico') + ' aplicado: ' + pesos(r.creditoUsado) : '') +
       (r.saldo > 0 ? ' · seña; saldo ' + pesos(r.saldo) + ' (se carga aparte al cobrarlo)' : '') +
       (r.origen === 'Ya trabajé con Fede' ? ' · origen: «ya trabajé con Fede» (revisar si es activo o pasado)' : '') +
       (r.origen ? '' : ' · origen: no lo marcó en la reserva');
@@ -609,7 +618,7 @@ function cuantas(ses) {
 function textoPago(r, pago) {
   var t = pago.medio === 'transferencia' ? 'transferencia' : 'tarjeta (Mercado Pago' + (pago.mpId ? ', op. ' + pago.mpId : '') + ')';
   t += ' · ' + pesos(r.ahora);
-  if (r.creditoUsado) t += ' (con crédito del Diagnóstico de ' + pesos(r.creditoUsado) + ')';
+  if (r.creditoUsado) t += ' (con crédito del ' + (r.creditoOrigen || 'Diagnóstico') + ' de ' + pesos(r.creditoUsado) + ')';
   if (r.saldo > 0) t += ' de seña; saldo ' + pesos(r.saldo);
   return t;
 }

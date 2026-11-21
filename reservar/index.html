@@ -483,7 +483,7 @@
     fetch('/api/mover?' + base).then(function (r) { return r.json(); }).then(function (r) {
       if (r.prueba) $('aviso-prueba').hidden = false;
       if (r.error) throw new Error(r.error);
-      if (!r.prueba && !r.puedeMover) throw new Error(r.movimientos >= 2 ? 'Ya lo moviste 2 veces. Escribime por WhatsApp y lo vemos.' : 'Falta menos de 24 h para tu encuentro. Para moverlo, escribime por WhatsApp.');
+      if (!r.prueba && !r.puedeMover) throw new Error(r.movimientos >= (r.maxMovimientos || 2) ? ((r.maxMovimientos === 1 ? 'Ya usaste el cambio que incluye tu reserva.' : 'Ya usaste los ' + (r.maxMovimientos || 2) + ' cambios que incluye tu reserva.') + ' Escribime por WhatsApp y lo vemos.') : 'Falta menos de 24 h para tu encuentro. Para moverlo, escribime por WhatsApp.');
       var arrancar = function (ses) {
         nMover = ses.n; tipoMover = ses.tipo || 'encuentro';
         var dias = (tipoMover === 'simulacro' && r.diasSim) ? r.diasSim : r.dias;
@@ -493,7 +493,7 @@
           dias = dias.map(function (d) { return { fecha: d.fecha, turnos: d.turnos.filter(function (t) { return lunes(t) === sem; }) }; }).filter(function (d) { return d.turnos.length; });
         }
         $('bajada').textContent = 'Hoy está el ' + ses.cuando + '. Elegí el nuevo día y la hora (hora de Argentina).' +
-          (r.maxMovimientos ? ' Te quedan ' + (r.maxMovimientos - r.movimientos) + ' cambios.' : '');
+          (r.maxMovimientos ? (r.maxMovimientos - r.movimientos === 1 ? ' Te queda 1 cambio.' : ' Te quedan ' + (r.maxMovimientos - r.movimientos) + ' cambios.') : '');
         mostrar('paso-turno');
         pintarDias(dias, moverA);
       };
@@ -790,7 +790,7 @@
             : fechas.length > 1
             ? '<p><b>Te guardé tus ' + fechas.length + ' encuentros</b> de ' + esc(p.nombre) + ':</p><ol style="margin-left:22px">' + fechas.map(function (x) { return '<li>' + esc(cuando(x)) + '</li>'; }).join('') + '</ol>'
             : '<p><b>Te guardé el turno.</b> ' + esc(p.nombre) + ': ' + esc(cuando(elegido)) + '.</p>') +
-          (r.montos.credito ? '<p>Ya se descontó el crédito de tu Diagnóstico (' + pesos(r.montos.credito) + ').</p>' : '') +
+          (r.montos.credito ? '<p>Ya se descontó el crédito de tu ' + esc(r.creditoOrigen === 'Kit de Audición' ? 'Kit de Audición' : 'Diagnóstico') + ' (' + pesos(r.montos.credito) + ').</p>' : '') +
           '<p>Para confirmarlo, transferí <b>' + pesos(r.montos.ahora) + '</b>' + (r.montos.saldo > 0 ? ' (la seña)' : '') + ' a:</p>' +
           '<p>Alias: <span class="dato">' + esc(t.alias) + '</span>' + (t.cbu ? '<br>' + esc(t.cbuEtiqueta || 'CBU') + ': <span class="dato">' + esc(t.cbu) + '</span>' : '') + (t.titular ? '<br>Titular: ' + esc(t.titular) : '') + '</p>' +
           '<p>Y mandame el comprobante por <a href="' + WA + '?text=' + encodeURIComponent('Hola Fede, te mando el comprobante de mi ' + p.nombre + '.') + '">WhatsApp</a>. ' + (fechas.length > 1 ? 'Quedan guardados' : 'El turno queda guardado') + ' hasta el ' + esc(cuando(t.vence)) + '.</p>' +

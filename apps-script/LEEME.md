@@ -14,7 +14,7 @@ Reemplazo de Agora para el **Diagnóstico** y el **Encuentro a medida**. Página
 
 Precios y horarios: `api/_lib.js` (y los textos de `reservar/index.html`). Si cambian en 05 · Precios y reglas, se cambian en los dos.
 
-Versión publicada del Apps Script: 13 (21/11/2026: clave antes de la configuración; crédito del Diagnóstico desde el Diagnóstico; mail «Venta web» alineado con Muse; Niveles 2 y 3 por Fichas recién con el encuentro 8; post-audición: «te escribo para dejarla agendada»).
+Versión publicada del Apps Script: 14 (21/11/2026: clave antes de la configuración; crédito del Diagnóstico desde el Diagnóstico; mail «Venta web» alineado con Muse; Niveles 2 y 3 por Fichas recién con el encuentro 8; post-audición: «te escribo para dejarla agendada»; crédito nombrado según su origen; la reserva guardada en el calendario nunca pasa de 1.000 caracteres).
 
 ## Variables de entorno en Vercel
 

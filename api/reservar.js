@@ -61,9 +61,9 @@ export default async function handler(req, res) {
   }
 
   // Crédito del Diagnóstico (30 días), si corresponde a esta propuesta.
-  let credito = 0;
+  let credito = 0, creditoOrigen = '';
   if (p.credito && !modoPrueba()) {
-    try { credito = (await gas('credito', { email })).monto || 0; } catch (e) { console.error(e); }
+    try { const c = await gas('credito', { email }); credito = c.monto || 0; creditoOrigen = c.origen || 'Diagnóstico'; } catch (e) { console.error(e); }
   }
   const m = montos(p, medio, credito);
   const expira = medio === 'tarjeta'
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
       sesiones: sesiones || inicios.map((s, i) => ({ inicio: s, fin: s + p.duracion * 60000, tipo: 'encuentro', n: i + 1 })),
       reserva: {
         producto: b.p, productoNombre: p.nombre, nombre, email, whatsapp, nota, origen, medio, duracion: p.duracion,
-        total: m.total, ahora: m.ahora, saldo: m.saldo, creditoUsado: m.credito || 0,
+        total: m.total, ahora: m.ahora, saldo: m.saldo, creditoUsado: m.credito || 0, ...(m.credito ? { creditoOrigen } : {}),
         ...(p.maxMov != null ? { maxMov: p.maxMov } : {}), ...(p.mismaSemana ? { mismaSemana: true } : {}),
         ...(aud ? { audicion: aud } : {}),
         sesion: limpiar(b.sesion, 24), origenWeb: limpiar(b.origenWeb, 60),
@@ -90,11 +90,11 @@ export default async function handler(req, res) {
     if (!hold.ok) return json(res, 409, { error: 'Ese horario se acaba de ocupar. Elegí otro.' });
 
     if (medio === 'transferencia') {
-      return json(res, 200, { id, k: ver, medio, montos: m, fechas: inicios, sesiones, transferencia: hold.transferencia });
+      return json(res, 200, { id, k: ver, medio, montos: m, creditoOrigen, fechas: inicios, sesiones, transferencia: hold.transferencia });
     }
 
     const titulo = (p.sena < 1 ? `${p.nombre} · seña del ${Math.round(p.sena * 100)} %` : p.nombre) +
-      (m.credito ? ' (con crédito del Diagnóstico)' : '');
+      (m.credito ? ' (con crédito del ' + creditoOrigen + ')' : '');
     const pref = await mp('/checkout/preferences', {
       method: 'POST',
       body: JSON.stringify({
