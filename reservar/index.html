@@ -55,6 +55,11 @@
   label { display: grid; gap: 4px; font-size: 17px; }
   input, textarea, select { font: inherit; font-size: 18px; padding: 11px 12px; border: 1px solid var(--linea); border-radius: 6px; background: #fff; color: var(--texto); width: 100%; }
   textarea { min-height: 88px; resize: vertical; }
+  .campo-tel { display: grid; gap: 4px; font-size: 17px; }
+  .tel { display: flex; gap: 8px; }
+  .tel select { flex: 0 0 auto; width: auto; max-width: 46%; padding-right: 6px; }
+  .tel input { flex: 1 1 auto; min-width: 0; }
+  .ayuda { color: var(--texto-suave); font-size: 15px; }
   fieldset { border: 0; display: grid; gap: 10px; }
   legend { font-size: 17px; margin-bottom: 6px; }
   .medio { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--linea); background: #fff; border-radius: 6px; padding: 12px 14px; cursor: pointer; }
@@ -131,7 +136,14 @@
         <div class="elegido" id="elegido"></div>
         <label>Nombre y apellido <input name="nombre" autocomplete="name" required maxlength="80"></label>
         <label>Mail <input name="email" type="email" autocomplete="email" required maxlength="120"></label>
-        <label>WhatsApp <input name="whatsapp" type="tel" autocomplete="tel" required maxlength="30" placeholder="Con código de área"></label>
+        <div class="campo-tel">
+          <span class="etiqueta">WhatsApp</span>
+          <div class="tel">
+            <select name="pais" aria-label="País" id="pais"></select>
+            <input name="whatsapp" type="tel" autocomplete="tel-national" required maxlength="20" aria-label="Número de WhatsApp" placeholder="221 555 1234">
+          </div>
+          <span class="ayuda" id="ayuda-tel">Código de área sin el 0, y el número sin el 15.</span>
+        </div>
         <label>¿Cómo te enteraste? <select name="origen">
           <option value="">Elegí una opción</option><option>Recomendación</option><option>Instagram</option><option>YouTube</option>
           <option>Flyer</option><option>Grupo de músicos o coro</option><option>Google</option><option>Ya trabajé con Fede</option><option>Otro</option>
@@ -175,6 +187,30 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
 
   var producto = q.get('p'), p = PRODUCTOS[producto], elegido = null;
+
+  // País del WhatsApp: bandera y código ya puestos. Argentina va con el 9 de celulares incluido.
+  var PAISES = [
+    ['AR', 'Argentina', '+54 9'], ['UY', 'Uruguay', '+598'], ['CL', 'Chile', '+56'], ['PY', 'Paraguay', '+595'],
+    ['BO', 'Bolivia', '+591'], ['PE', 'Perú', '+51'], ['BR', 'Brasil', '+55'], ['CO', 'Colombia', '+57'],
+    ['VE', 'Venezuela', '+58'], ['EC', 'Ecuador', '+593'], ['MX', 'México', '+52'], ['CR', 'Costa Rica', '+506'],
+    ['ES', 'España', '+34'], ['IT', 'Italia', '+39'], ['DE', 'Alemania', '+49'], ['FR', 'Francia', '+33'],
+    ['AT', 'Austria', '+43'], ['CH', 'Suiza', '+41'], ['GB', 'Reino Unido', '+44'], ['US', 'Estados Unidos', '+1'],
+    ['CA', 'Canadá', '+1']
+  ];
+  var bandera = function (cc) { return String.fromCodePoint.apply(null, cc.split('').map(function (c) { return 127397 + c.charCodeAt(0); })); };
+  PAISES.forEach(function (x) {
+    var o = document.createElement('option');
+    o.value = x[2]; o.dataset.pais = x[0];
+    o.textContent = bandera(x[0]) + ' ' + x[2];
+    o.title = x[1];
+    $('pais').appendChild(o);
+  });
+  var otro = document.createElement('option'); otro.value = '+'; otro.textContent = '🌐 Otro'; $('pais').appendChild(otro);
+  $('pais').onchange = function () {
+    var ar = this.value === '+54 9', otroPais = this.value === '+';
+    $('ayuda-tel').textContent = ar ? 'Código de área sin el 0, y el número sin el 15.' : otroPais ? 'Escribí el número completo, con el código de tu país.' : 'Tu número, sin el código de país.';
+    $('form').whatsapp.placeholder = ar ? '221 555 1234' : otroPais ? '+00 000 000 000' : '';
+  };
 
   function fin(html) { $('fin').innerHTML = html; mostrar('paso-fin'); }
 
@@ -292,9 +328,9 @@
     ev.preventDefault();
     var f = ev.target, datos = {
       p: producto, inicio: elegido, nombre: f.nombre.value, email: f.email.value,
-      whatsapp: f.whatsapp.value, nota: f.nota.value, origen: f.origen.value, medio: f.medio.value
+      whatsapp: (f.pais.value === '+' ? '' : f.pais.value + ' ') + f.whatsapp.value.trim(), nota: f.nota.value, origen: f.origen.value, medio: f.medio.value
     };
-    if (!datos.nombre.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(datos.email.trim()) || datos.whatsapp.replace(/\D/g, '').length < 8) {
+    if (!datos.nombre.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(datos.email.trim()) || f.whatsapp.value.replace(/\D/g, '').length < 7) {
       $('error-form').textContent = 'Revisá tu nombre, tu mail y tu WhatsApp.'; $('error-form').hidden = false; return;
     }
     $('enviar').disabled = true; $('enviar').textContent = 'Reservando…'; $('error-form').hidden = true;
