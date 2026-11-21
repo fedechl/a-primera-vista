@@ -426,7 +426,7 @@ function habilitado(b) {
   if (nivelEnFichas(b.email, b.cfg || CFG_ACTUAL || {}) >= nivel - 1) return { ok: true, desde: 0 };
   return { ok: false };
 }
-// La base de clientes: 02 › Fichas. Si el mail figura en Navegar la Partitura (Recorrido A), vale su Nivel.
+// La base de clientes: 02 › Fichas. Si el mail figura en Navegar la Partitura (Recorrido A), devuelve el último nivel terminado.
 function nivelEnFichas(email, c) {
   try {
     var id = c.ventas; if (!id) return 0;
@@ -443,7 +443,10 @@ function nivelEnFichas(email, c) {
       var mails = String(d[cols['Mail']] || '').toLowerCase().split(/[\s,;]+/);
       if (mails.indexOf(mail) < 0) continue;
       if (String(d[cols['Recorrido']]).trim() !== 'A') continue;
-      mejor = Math.max(mejor, Number(d[cols['Nivel']]) || 0);
+      // Un nivel cuenta como terminado recién cuando la ficha llega al encuentro 8 (decisión de Fede, 21/11/2026).
+      var nivel = Number(d[cols['Nivel']]) || 0;
+      var ultimo = cols['Último Nº de encuentro'] != null ? Number(d[cols['Último Nº de encuentro']]) || 0 : 0;
+      mejor = Math.max(mejor, ultimo >= 8 ? nivel : nivel - 1);
     }
     return mejor;
   } catch (e) { return 0; }
