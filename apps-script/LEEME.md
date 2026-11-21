@@ -14,6 +14,8 @@ Reemplazo de Agora para el **Diagnóstico** y el **Encuentro a medida**. Página
 
 Precios y horarios: `api/_lib.js` (y los textos de `reservar/index.html`). Si cambian en 05 · Precios y reglas, se cambian en los dos.
 
+Versión publicada del Apps Script: 9 (21/11/2026, la clave se revisa antes de guardar la configuración).
+
 ## Variables de entorno en Vercel
 
 | Variable | Qué es |

@@ -56,10 +56,11 @@ function doPost(e) {
   var salida;
   try {
     var b = JSON.parse(e.postData.contents);
+    // Primero la clave: sin ella no se lee ni se guarda nada de lo que llega.
+    if (!b.secret || b.secret !== PropertiesService.getScriptProperties().getProperty('SECRET')) throw new Error('clave inválida');
     CFG_ACTUAL = b.cfg || null;
     // Las tareas automáticas (limpiar, recordatorios) no reciben la configuración: queda guardada la última.
     if (b.cfg) PropertiesService.getScriptProperties().setProperty('CFG', JSON.stringify({ muse: b.cfg.muse, avisos: b.cfg.avisos, ventas: b.cfg.ventas, sitio: b.cfg.sitio, whatsapp: b.cfg.whatsapp }));
-    if (!b.secret || b.secret !== PropertiesService.getScriptProperties().getProperty('SECRET')) throw new Error('clave inválida');
     var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito,
       habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar, evento: evento };
     if (!acciones[b.accion]) throw new Error('acción desconocida');
