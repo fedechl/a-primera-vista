@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     if (r.estado === 'vencida') return res.end(pagina('La reserva venció', 'El turno ya se liberó. Si el pago llegó igual, coordiná un horario nuevo con el músico.'));
     return res.end(pagina('Listo, confirmada', r.yaEstaba
       ? 'Esta reserva ya estaba confirmada. No se mandó nada de nuevo.'
-      : `Le llegó la confirmación a ${r.nombre || 'el músico'} y Muse recibió la venta para cargarla.`));
+      : `Le llegó la confirmación a ${r.nombre || 'el músico'}, la venta quedó cargada en 02 › Ventas y Muse recibió el aviso.`));
   } catch (e) {
     console.error(e);
     res.statusCode = 502;
