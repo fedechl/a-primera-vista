@@ -57,6 +57,8 @@ function doPost(e) {
   try {
     var b = JSON.parse(e.postData.contents);
     CFG_ACTUAL = b.cfg || null;
+    // Las tareas automáticas (limpiar, recordatorios) no reciben la configuración: queda guardada la última.
+    if (b.cfg) PropertiesService.getScriptProperties().setProperty('CFG', JSON.stringify({ muse: b.cfg.muse, avisos: b.cfg.avisos, ventas: b.cfg.ventas, sitio: b.cfg.sitio, whatsapp: b.cfg.whatsapp }));
     if (!b.secret || b.secret !== PropertiesService.getScriptProperties().getProperty('SECRET')) throw new Error('clave inválida');
     var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito,
       habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar, evento: evento };
@@ -536,9 +538,39 @@ function limpiar() {
     privateExtendedProperty: 'apv_estado=pendiente', timeMin: new Date(ahora - 86400000).toISOString(),
     singleEvents: true, maxResults: 250,
   });
+  var vencidas = {};
   (r.items || []).forEach(function (ev) {
-    if (Number(ev.extendedProperties.private.apv_expira) < ahora) Calendar.Events.remove('primary', ev.id);
+    var p = ev.extendedProperties.private;
+    if (Number(p.apv_expira) >= ahora) return;
+    if (!vencidas[p.apv_id]) vencidas[p.apv_id] = { r: JSON.parse(p.apv_reserva), inicio: new Date(ev.start.dateTime) };
+    else if (new Date(ev.start.dateTime) < vencidas[p.apv_id].inicio) vencidas[p.apv_id].inicio = new Date(ev.start.dateTime);
+    Calendar.Events.remove('primary', ev.id);
   });
+  var c = JSON.parse(PropertiesService.getScriptProperties().getProperty('CFG') || '{}');
+  Object.keys(vencidas).forEach(function (id) { avisarSinPagar(c, id, vencidas[id].r, vencidas[id].inicio); });
+}
+
+// Una reserva que venció sin pago: Muse recibe los datos para el seguimiento y queda en 02 › Captación · Consultas.
+function avisarSinPagar(c, id, r, inicio) {
+  try {
+    var medio = r.medio === 'transferencia' ? 'por transferencia (no llegó el comprobante)' : 'con tarjeta (no completó el pago en Mercado Pago)';
+    var cuerpo = '<p>Una reserva de la web venció sin pagar. Es para hacerle seguimiento.</p><ul>' +
+      '<li>Músico: ' + r.nombre + '</li><li>WhatsApp: ' + r.whatsapp + '</li><li>Mail: ' + r.email + '</li>' +
+      '<li>Propuesta: ' + r.productoNombre + '</li><li>Horario que había elegido: ' + fechaLarga(inicio) + '</li>' +
+      '<li>Iba a pagar ' + medio + '</li>' + (r.origen ? '<li>¿Cómo se enteró?: ' + r.origen + '</li>' : '') +
+      (r.nota ? '<li>Nota: ' + r.nota + '</li>' : '') + '<li>Código: ' + id + '</li></ul>' +
+      '<p>Ya quedó cargada en 02 › Captación · Consultas como «Reserva web sin pagar». Proponele a Fede el mensaje de seguimiento (base: /lopienso, contando que le guardé el horario y que el pago no se completó). Si quiere retomarla, la reserva se hace de nuevo en leeraprimeravista.com/reservar.</p>';
+    if (c.muse) enviar(c.muse, 'Reserva web sin pagar · ' + r.productoNombre + ' · ' + r.nombre, cuerpo);
+    if (c.ventas) {
+      var hoja = SpreadsheetApp.openById(c.ventas).getSheetByName('Captación · Consultas');
+      if (hoja) {
+        var col = hoja.getRange('A5:A' + hoja.getMaxRows()).getValues(), fila = 5;
+        for (var i = 0; i < col.length; i++) { if (col[i][0] === '' || col[i][0] === null) { fila = 5 + i; break; } }
+        hoja.getRange(fila, 1, 1, 8).setValues([[new Date(), r.nombre, '', 'Reserva web sin pagar', r.origen || '', '', r.whatsapp, r.email]]);
+        hoja.getRange(fila, 14, 1, 2).setValues([[r.productoNombre + ' · ' + fechaLarga(inicio) + ' · ' + medio, 'web · ' + id]]);
+      }
+    }
+  } catch (e) { /* el aviso nunca frena la limpieza */ }
 }
 
 // ---------- Textos ----------
@@ -623,7 +655,7 @@ function mailAvisoTransferencia(r, b, c, ses) {
 function mailMusicoConfirmada(r, ses, c, verUrl) {
   var saldo = r.saldo > 0 ? '<p>Quedó paga la seña. El saldo de <b>' + pesos(r.saldo) + '</b> se abona antes del encuentro, por transferencia.</p>' : '';
   var extra = {
-    'diagnostico': '<p>No hace falta que prepares nada.</p>',
+    'diagnostico': '<p>No hace falta que prepares nada. Lo único que te pido, antes del Diagnóstico, es este formulario: son 3 minutos y así aprovechamos la media hora para leer. <a href="https://forms.gle/28SgZAuKJDexo27U8">Contame cómo leés hoy</a>.</p>',
     'encuentro-a-medida': '<p>Respondé este mail con la partitura o el material sobre el que querés trabajar, así lo preparo antes.</p>',
   }[r.producto] || '';
   var garantia = /^nivel-/.test(r.producto) ? '<p>La garantía del nivel: «Si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.»</p>' : '';
