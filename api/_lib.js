@@ -112,6 +112,13 @@ export async function confirmarSiAprobado(paymentId) {
   });
 }
 
+// Busca en Mercado Pago un pago aprobado de esa reserva (por si el aviso de MP no llegó).
+export async function revisarReserva(id) {
+  const r = await mp('/v1/payments/search?sort=date_created&criteria=desc&external_reference=' + encodeURIComponent(id));
+  const pago = (r.results || []).find((x) => x.status === 'approved');
+  return pago ? confirmarSiAprobado(pago.id) : { estado: 'sin pago aprobado' };
+}
+
 export function json(res, status, obj) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');

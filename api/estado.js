@@ -1,5 +1,5 @@
 // GET /api/estado?id=…&k=…[&payment_id=…] · lo consulta la página al volver de Mercado Pago.
-import { confirmarSiAprobado, firmaValida, gas, json, modoPrueba } from './_lib.js';
+import { confirmarSiAprobado, firmaValida, gas, json, modoPrueba, revisarReserva } from './_lib.js';
 
 export default async function handler(req, res) {
   const { id, k, payment_id } = req.query || {};
@@ -9,7 +9,11 @@ export default async function handler(req, res) {
     if (payment_id && /^\d+$/.test(String(payment_id))) {
       try { await confirmarSiAprobado(payment_id); } catch (e) { console.error(e); }
     }
-    return json(res, 200, await gas('estado', { id }));
+    let r = await gas('estado', { id });
+    if (r.estado === 'pendiente' && r.medio === 'tarjeta') {
+      try { await revisarReserva(id); r = await gas('estado', { id }); } catch (e) { console.error(e); }
+    }
+    return json(res, 200, r);
   } catch (e) {
     console.error(e);
     return json(res, 502, { error: 'No pude consultar la reserva.' });
