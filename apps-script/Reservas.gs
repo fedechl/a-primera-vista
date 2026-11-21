@@ -275,7 +275,8 @@ function confirmar(b) {
     });
     var sesiones = evs.map(sesionDeEvento);
     if (r.creditoUsado) usarCredito(r.email);
-    if (r.producto === 'diagnostico') guardarCredito(r.email, pago.monto || r.ahora, 30 * 86400000, 'Diagnóstico');
+    // Los 30 días del crédito corren desde el día del Diagnóstico, no desde el pago (decisión de Fede, 21/11/2026).
+    if (r.producto === 'diagnostico') guardarCredito(r.email, pago.monto || r.ahora, Math.max.apply(null, sesiones.map(function (x) { return x.fin; })) + 30 * 86400000 - Date.now(), 'Diagnóstico');
     if (/^kit-/.test(r.producto) && r.audicion) guardarCredito(r.email, 90000, Number(r.audicion) + 60 * 86400000 - Date.now(), 'Kit de Audición');
     var nv = /^nivel-(\d)$/.exec(r.producto);
     if (nv) guardarNivel(r.email, Number(nv[1]), Math.max.apply(null, sesiones.map(function (x) { return x.fin; })));
@@ -363,6 +364,8 @@ function mover(b) {
     enviar(c.avisos, 'Reserva movida · ' + r.productoNombre + ' · ' + r.nombre,
       '<p>' + r.nombre + ' movió ' + (esPack(r) ? 'el ' + etiqueta(sx).toLowerCase() + ' de su ' + r.productoNombre : 'su ' + r.productoNombre) +
       ' del ' + fechaLarga(antes) + ' al ' + fechaLarga(new Date(ini)) + ' (cambio ' + (mov + 1) + ' de ' + maxMov(r) + ').</p>');
+    // Si se mueve el Diagnóstico, el crédito vence 30 días después de la fecha nueva.
+    if (r.producto === 'diagnostico') moverCredito(r.email, fin + 30 * 86400000);
     return { ok: true, cuando: fechaLarga(new Date(ini)) };
   } finally {
     lock.releaseLock();
@@ -390,6 +393,13 @@ function credito(b) {
   var x = JSON.parse(v);
   if (x.usado || x.vence < Date.now()) return { monto: 0 };
   return { monto: x.monto, vence: x.vence, origen: x.origen };
+}
+function moverCredito(email, vence) {
+  var props = PropertiesService.getScriptProperties(), k = claveCredito(email), v = props.getProperty(k);
+  if (!v) return;
+  var x = JSON.parse(v);
+  if (x.usado || x.origen !== 'Diagnóstico') return;
+  x.vence = vence; props.setProperty(k, JSON.stringify(x));
 }
 function usarCredito(email) {
   var props = PropertiesService.getScriptProperties(), k = claveCredito(email), v = props.getProperty(k);
