@@ -1,0 +1,6 @@
+{
+  "name": "a-primera-vista",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=18" }
+}

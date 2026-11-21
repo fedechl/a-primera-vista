@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reservar · A Primera Vista</title>
+<meta name="description" content="Elegí tu horario y reservá tu Diagnóstico o tu Encuentro a medida con Fede.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #052E5E; --azul-hondo: #031F41; --dorado: #CD9E34; --dorado-claro: #E4C278;
+    --papel: #F5F7FA; --linea: #D6DDE7; --texto: #052E5E; --texto-suave: #3D5576; --error: #9B2C2C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--papel); color: var(--texto); font-family: "Spectral", Georgia, serif; font-size: 19px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--dorado); outline-offset: 3px; border-radius: 2px; }
+  .contenedor { width: 100%; max-width: 680px; margin: 0 auto; padding: 0 20px; }
+  .portada { background: var(--azul); color: #fff; padding: 36px 0 44px; }
+  .marca { font-size: 17px; color: var(--dorado-claro); text-decoration: none; }
+  .marca span { color: rgba(255,255,255,0.7); }
+  h1 { font-weight: 500; font-size: clamp(36px, 8vw, 54px); line-height: 1.08; letter-spacing: -0.015em; margin-top: 28px; }
+  .bajada { color: rgba(255,255,255,0.8); margin-top: 12px; max-width: 40ch; }
+  main { padding: 36px 0 64px; }
+  h2 { font-weight: 500; font-size: 26px; line-height: 1.2; margin: 32px 0 14px; }
+  h2:first-child { margin-top: 0; }
+  .suave { color: var(--texto-suave); font-size: 17px; }
+  .aviso-prueba { background: #FFF6E0; border: 1px solid var(--dorado-claro); padding: 10px 14px; font-size: 16px; border-radius: 6px; margin-bottom: 24px; }
+
+  .opciones { display: grid; gap: 14px; }
+  .opcion { display: block; text-decoration: none; border: 1px solid var(--linea); border-left: 3px solid var(--dorado); background: #fff; padding: 18px 20px; border-radius: 6px; }
+  .opcion h3 { font-weight: 600; font-size: 22px; }
+  .opcion p { color: var(--texto-suave); font-size: 17px; margin-top: 4px; }
+  .opcion .precio { color: var(--texto); font-weight: 600; margin-top: 8px; }
+
+  .dias { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; scroll-snap-type: x proximity; }
+  .dia, .hora { font: inherit; cursor: pointer; border: 1px solid var(--linea); background: #fff; color: var(--texto); border-radius: 8px; }
+  .dia { flex: 0 0 auto; min-width: 74px; padding: 8px 10px; text-align: center; line-height: 1.25; scroll-snap-align: start; }
+  .dia small { display: block; font-size: 14px; color: var(--texto-suave); text-transform: capitalize; }
+  .dia b { font-size: 22px; font-weight: 600; }
+  .horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .hora { padding: 10px 0; font-weight: 600; }
+  .dia[aria-pressed="true"], .hora[aria-pressed="true"] { background: var(--azul); color: #fff; border-color: var(--azul); }
+  .dia[aria-pressed="true"] small { color: var(--dorado-claro); }
+
+  form { display: grid; gap: 16px; }
+  label { display: grid; gap: 4px; font-size: 17px; }
+  input, textarea { font: inherit; font-size: 18px; padding: 11px 12px; border: 1px solid var(--linea); border-radius: 6px; background: #fff; color: var(--texto); width: 100%; }
+  textarea { min-height: 88px; resize: vertical; }
+  fieldset { border: 0; display: grid; gap: 10px; }
+  legend { font-size: 17px; margin-bottom: 6px; }
+  .medio { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--linea); background: #fff; border-radius: 6px; padding: 12px 14px; cursor: pointer; }
+  .medio input { width: auto; margin-top: 7px; accent-color: var(--azul); }
+  .medio span { display: block; }
+  .medio .monto { font-weight: 600; }
+  .medio .nota { color: var(--texto-suave); font-size: 16px; }
+  .elegido { background: #fff; border: 1px solid var(--linea); border-radius: 6px; padding: 12px 14px; font-size: 17px; }
+  .elegido b { font-weight: 600; }
+  .elegido button { font: inherit; font-size: 16px; background: none; border: 0; color: var(--texto-suave); text-decoration: underline; cursor: pointer; margin-left: 6px; }
+  .boton { display: inline-block; font: inherit; font-weight: 600; background: var(--dorado); color: var(--azul-hondo); border: 0; border-radius: 999px; padding: 15px 28px; text-decoration: none; cursor: pointer; text-align: center; }
+  .boton:hover { background: var(--dorado-claro); }
+  .boton[disabled] { opacity: .6; cursor: wait; }
+  .error { color: var(--error); font-size: 17px; }
+  .caja { background: #fff; border: 1px solid var(--linea); border-left: 3px solid var(--dorado); border-radius: 6px; padding: 18px 20px; }
+  .caja p + p { margin-top: 10px; }
+  .dato { font-weight: 600; user-select: all; }
+  [hidden] { display: none !important; }
+  footer { background: var(--azul-hondo); color: rgba(255,255,255,0.75); font-size: 16px; padding: 28px 0; }
+  @media (max-width: 480px) { body { font-size: 18px; } .boton { width: 100%; } }
+</style>
+<script defer src="/_vercel/insights/script.js"></script>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+</head>
+<body>
+
+<header class="portada">
+  <div class="contenedor">
+    <a class="marca" href="/">A Primera Vista <span>· con Fede Chlopecki</span></a>
+    <h1 id="titulo">Reservá tu horario</h1>
+    <p class="bajada" id="bajada">Elegí el día y la hora. Todos los encuentros son por Zoom, en hora de Argentina.</p>
+  </div>
+</header>
+
+<main>
+  <div class="contenedor">
+    <p class="aviso-prueba" id="aviso-prueba" hidden>Modo prueba: los horarios son de muestra y no se cobra ni se agenda nada.</p>
+
+    <!-- 1 · Qué reservar (si no vino en el link) -->
+    <section id="paso-elegir" hidden>
+      <h2>¿Qué querés reservar?</h2>
+      <div class="opciones">
+        <a class="opcion" href="?p=diagnostico">
+          <h3>Diagnóstico</h3>
+          <p>30 minutos por Zoom: fragmentos cortos, de menos a más, y después una devolución escrita.</p>
+          <p class="precio">$54.400 · $50.048 por transferencia</p>
+        </a>
+        <a class="opcion" href="?p=encuentro-a-medida">
+          <h3>Encuentro a medida</h3>
+          <p>1 hora por Zoom, con preparación previa con tu material, grabación, devolución escrita y prioridad de agenda.</p>
+          <p class="precio">$99.000 · $91.080 por transferencia</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- 2 · Día y hora -->
+    <section id="paso-turno" hidden>
+      <h2>Elegí el día</h2>
+      <p class="suave" id="cargando">Buscando horarios libres…</p>
+      <div class="dias" id="dias" role="group" aria-label="Días con horarios libres"></div>
+      <div id="bloque-horas" hidden>
+        <h2>Elegí la hora</h2>
+        <div class="horas" id="horas" role="group" aria-label="Horarios libres"></div>
+      </div>
+      <p class="error" id="error-turnos" hidden></p>
+    </section>
+
+    <!-- 3 · Datos y pago -->
+    <section id="paso-datos" hidden>
+      <h2>Tus datos</h2>
+      <form id="form" novalidate>
+        <div class="elegido" id="elegido"></div>
+        <label>Nombre y apellido <input name="nombre" autocomplete="name" required maxlength="80"></label>
+        <label>Mail <input name="email" type="email" autocomplete="email" required maxlength="120"></label>
+        <label>WhatsApp <input name="whatsapp" type="tel" autocomplete="tel" required maxlength="30" placeholder="Con código de área"></label>
+        <label id="campo-nota" hidden>¿Sobre qué querés trabajar? <textarea name="nota" maxlength="500" placeholder="Una obra, una audición, algo que se te complica…"></textarea></label>
+        <fieldset>
+          <legend>¿Cómo pagás?</legend>
+          <label class="medio"><input type="radio" name="medio" value="tarjeta" checked><span><span class="monto" id="monto-tarjeta"></span><span class="nota">Con Mercado Pago (tarjeta de crédito o débito, en 1 pago). Se confirma en el momento.</span></span></label>
+          <label class="medio"><input type="radio" name="medio" value="transferencia"><span><span class="monto" id="monto-transferencia"></span><span class="nota">Con 8 % de descuento por transferencia. Te guardo el turno hasta que llegue el comprobante.</span></span></label>
+        </fieldset>
+        <p class="suave" id="texto-sena" hidden></p>
+        <p class="error" id="error-form" hidden></p>
+        <button class="boton" id="enviar" type="submit">Reservar</button>
+        <p class="suave">Si necesitás mover el horario, me avisás por WhatsApp con 24 h de anticipación.</p>
+      </form>
+    </section>
+
+    <!-- 4 · Resultado -->
+    <section id="paso-fin" hidden>
+      <div class="caja" id="fin"></div>
+    </section>
+  </div>
+</main>
+
+<footer><div class="contenedor"><p>A Primera Vista · con Fede Chlopecki</p></div></footer>
+
+<script>
+(function () {
+  var PRODUCTOS = {
+    'diagnostico': { nombre: 'Diagnóstico', bajada: '30 minutos por Zoom y una devolución escrita.', tarjeta: 54400, transferencia: 50048, sena: 1 },
+    'encuentro-a-medida': { nombre: 'Encuentro a medida', bajada: '1 hora por Zoom, con preparación previa con tu material.', tarjeta: 99000, transferencia: 91080, sena: 0.1 }
+  };
+  var WA = 'https://wa.me/5491178165441';
+  var TZ = 'America/Argentina/Buenos_Aires';
+  var q = new URLSearchParams(location.search);
+  var $ = function (id) { return document.getElementById(id); };
+  var pesos = function (n) { return '$' + Math.round(n).toLocaleString('es-AR'); };
+  var fmt = function (ms, op) { return new Intl.DateTimeFormat('es-AR', Object.assign({ timeZone: TZ }, op)).format(new Date(ms)); };
+  var cuando = function (ms) { return fmt(ms, { weekday: 'long', day: 'numeric', month: 'long' }) + ' a las ' + fmt(ms, { hour: '2-digit', minute: '2-digit', hour12: false }); };
+  var mostrar = function (id) { ['paso-elegir', 'paso-turno', 'paso-datos', 'paso-fin'].forEach(function (s) { $(s).hidden = s !== id; }); window.scrollTo(0, 0); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+  var producto = q.get('p'), p = PRODUCTOS[producto], elegido = null;
+
+  function fin(html) { $('fin').innerHTML = html; mostrar('paso-fin'); }
+
+  // Volviendo de Mercado Pago (o del link del mail)
+  if (q.get('id') && q.get('k')) {
+    $('titulo').textContent = 'Tu reserva';
+    $('bajada').textContent = '';
+    fin('<p>Revisando tu pago…</p>');
+    var intentos = 0;
+    (function consultar() {
+      var u = '/api/estado?id=' + encodeURIComponent(q.get('id')) + '&k=' + encodeURIComponent(q.get('k'));
+      if (q.get('payment_id')) u += '&payment_id=' + encodeURIComponent(q.get('payment_id'));
+      fetch(u).then(function (r) { return r.json(); }).then(function (r) {
+        if (r.prueba) $('aviso-prueba').hidden = false;
+        if (r.estado === 'confirmada') {
+          fin('<p><b>Listo, quedó confirmado.</b></p>' + (r.cuando ? '<p>' + esc(r.producto) + ': <b>' + esc(r.cuando) + '</b> (hora de Argentina), por Zoom.</p>' : '') +
+            '<p>Te mandé un mail con el link de Zoom y la invitación al calendario. Si no lo ves, fijate en spam.</p>' +
+            (r.saldo > 0 ? '<p>El saldo de ' + pesos(r.saldo) + ' se abona antes del encuentro, por transferencia.</p>' : ''));
+        } else if (r.estado === 'vencida') {
+          fin('<p>Esta reserva venció y el horario se liberó.</p><p><a class="boton" href="/reservar/">Elegir otro horario</a></p>');
+        } else if (r.estado === 'pendiente' && r.medio === 'transferencia') {
+          fin('<p>Tu turno del <b>' + esc(r.cuando) + '</b> está guardado. Se confirma cuando me llegue el comprobante por <a href="' + WA + '">WhatsApp</a>.</p>');
+        } else if (++intentos < 8) {
+          setTimeout(consultar, 2500);
+        } else {
+          fin('<p>Todavía no veo el pago acreditado. Si pagaste, en unos minutos te llega el mail de confirmación.</p><p>Cualquier cosa, escribime por <a href="' + WA + '">WhatsApp</a>.</p>');
+        }
+      }).catch(function () { fin('<p>No pude revisar la reserva. Escribime por <a href="' + WA + '">WhatsApp</a> y lo vemos.</p>'); });
+    })();
+    return;
+  }
+
+  if (!p) { mostrar('paso-elegir'); return; }
+
+  $('titulo').textContent = p.nombre;
+  $('bajada').textContent = p.bajada + ' Elegí el día y la hora (hora de Argentina).';
+  document.title = 'Reservar ' + p.nombre + ' · A Primera Vista';
+  if (q.get('fallo')) { $('error-turnos').textContent = 'El pago no se completó y no se cobró nada. Podés elegir el horario de nuevo.'; $('error-turnos').hidden = false; }
+  mostrar('paso-turno');
+
+  var sena = function (monto) { return Math.round(monto * p.sena); };
+  $('monto-tarjeta').textContent = p.sena < 1 ? 'Tarjeta: seña de ' + pesos(sena(p.tarjeta)) + ' (total ' + pesos(p.tarjeta) + ')' : 'Tarjeta: ' + pesos(p.tarjeta);
+  $('monto-transferencia').textContent = p.sena < 1 ? 'Transferencia: seña de ' + pesos(sena(p.transferencia)) + ' (total ' + pesos(p.transferencia) + ')' : 'Transferencia: ' + pesos(p.transferencia);
+  if (p.sena < 1) { $('texto-sena').textContent = 'Al reservar se paga la seña del ' + Math.round(p.sena * 100) + ' %. El saldo, antes del encuentro.'; $('texto-sena').hidden = false; }
+  if (producto === 'encuentro-a-medida') $('campo-nota').hidden = false;
+
+  fetch('/api/turnos?p=' + encodeURIComponent(producto)).then(function (r) { return r.json(); }).then(function (r) {
+    $('cargando').hidden = true;
+    if (r.prueba) $('aviso-prueba').hidden = false;
+    if (r.error) throw new Error(r.error);
+    if (!r.dias.length) { $('error-turnos').innerHTML = 'No quedan horarios libres en las próximas semanas. Escribime por <a href="' + WA + '">WhatsApp</a> y lo coordinamos.'; $('error-turnos').hidden = false; return; }
+    r.dias.forEach(function (d, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'dia'; b.setAttribute('aria-pressed', 'false');
+      var ms = d.turnos[0];
+      b.innerHTML = '<small>' + fmt(ms, { weekday: 'short' }).replace('.', '') + '</small><b>' + fmt(ms, { day: 'numeric' }) + '</b><small>' + fmt(ms, { month: 'short' }).replace('.', '') + '</small>';
+      b.onclick = function () { elegirDia(d, b); };
+      $('dias').appendChild(b);
+      if (i === 0) elegirDia(d, b);
+    });
+  }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
+
+  function elegirDia(d, boton) {
+    [].forEach.call($('dias').children, function (x) { x.setAttribute('aria-pressed', String(x === boton)); });
+    $('horas').innerHTML = '';
+    d.turnos.forEach(function (ms) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'hora'; b.setAttribute('aria-pressed', 'false');
+      b.textContent = fmt(ms, { hour: '2-digit', minute: '2-digit', hour12: false });
+      b.onclick = function () { elegirHora(ms); };
+      $('horas').appendChild(b);
+    });
+    $('bloque-horas').hidden = false;
+  }
+
+  function elegirHora(ms) {
+    elegido = ms;
+    $('elegido').innerHTML = p.nombre + ': <b>' + esc(cuando(ms)) + '</b><button type="button" id="cambiar">Cambiar</button>';
+    $('cambiar').onclick = function () { mostrar('paso-turno'); };
+    $('error-form').hidden = true;
+    mostrar('paso-datos');
+    $('form').nombre.focus();
+  }
+
+  $('form').onsubmit = function (ev) {
+    ev.preventDefault();
+    var f = ev.target, datos = {
+      p: producto, inicio: elegido, nombre: f.nombre.value, email: f.email.value,
+      whatsapp: f.whatsapp.value, nota: f.nota.value, medio: f.medio.value
+    };
+    if (!datos.nombre.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(datos.email.trim()) || datos.whatsapp.replace(/\D/g, '').length < 8) {
+      $('error-form').textContent = 'Revisá tu nombre, tu mail y tu WhatsApp.'; $('error-form').hidden = false; return;
+    }
+    $('enviar').disabled = true; $('enviar').textContent = 'Reservando…'; $('error-form').hidden = true;
+    fetch('/api/reservar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        if (r.error) throw new Error(r.error);
+        if (r.prueba) {
+          fin('<p><b>Modo prueba.</b> Acá iría ' + (datos.medio === 'tarjeta' ? 'el pago de Mercado Pago por ' + pesos(r.montos.ahora) : 'la pantalla con los datos para transferir ' + pesos(r.montos.ahora)) + '.</p><p>' + esc(p.nombre) + ': ' + esc(cuando(elegido)) + '.</p>');
+          return;
+        }
+        if (r.pagar) { location.href = r.pagar; return; }
+        var t = r.transferencia || {};
+        fin('<p><b>Te guardé el turno.</b> ' + esc(p.nombre) + ': ' + esc(cuando(elegido)) + '.</p>' +
+          '<p>Para confirmarlo, transferí <b>' + pesos(r.montos.ahora) + '</b>' + (r.montos.saldo > 0 ? ' (la seña)' : '') + ' a:</p>' +
+          '<p>Alias: <span class="dato">' + esc(t.alias) + '</span>' + (t.cbu ? '<br>CBU: <span class="dato">' + esc(t.cbu) + '</span>' : '') + (t.titular ? '<br>Titular: ' + esc(t.titular) : '') + '</p>' +
+          '<p>Y mandame el comprobante por <a href="' + WA + '?text=' + encodeURIComponent('Hola Fede, te mando el comprobante de mi ' + p.nombre + '.') + '">WhatsApp</a>. El turno queda guardado hasta el ' + esc(cuando(t.vence)) + '.</p>' +
+          '<p class="suave">También te mandé estos datos por mail.</p>');
+      })
+      .catch(function (e) {
+        $('error-form').textContent = e.message || 'Algo falló. Probá de nuevo.'; $('error-form').hidden = false;
+        $('enviar').disabled = false; $('enviar').textContent = 'Reservar';
+      });
+  };
+})();
+</script>
+</body>
+</html>
