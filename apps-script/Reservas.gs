@@ -51,10 +51,12 @@ function calendarioDisponibilidad() {
 }
 
 // ---------- Entrada ----------
+var CFG_ACTUAL = null; // la configuración que mandó Vercel en este pedido
 function doPost(e) {
   var salida;
   try {
     var b = JSON.parse(e.postData.contents);
+    CFG_ACTUAL = b.cfg || null;
     if (!b.secret || b.secret !== PropertiesService.getScriptProperties().getProperty('SECRET')) throw new Error('clave inválida');
     var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito };
     if (!acciones[b.accion]) throw new Error('acción desconocida');
@@ -75,7 +77,7 @@ function doGet() {
 // dirección física (traslado). Los feriados bloquean el día entero.
 function ocupado(b) {
   var desde = new Date(Number(b.desde)), hasta = new Date(Number(b.hasta));
-  var ocupados = [], disponibles = [];
+  var ocupados = [], disponibles = [], sueltos = [];
   var dispId = PropertiesService.getScriptProperties().getProperty('CAL_DISP');
   // Todos los calendarios en los que Fede es dueño o puede editar (el personal, Familia, el de RE/MAX…).
   // Quedan afuera los que solo lee (feriados, calendarios importados de terceros).
@@ -89,7 +91,10 @@ function ocupado(b) {
       (r.items || []).forEach(function (ev) {
         if (ev.status === 'cancelled') return;
         if (esDisp) {
-          if (ev.start.dateTime) disponibles.push({ s: new Date(ev.start.dateTime).getTime(), e: new Date(ev.end.dateTime).getTime() });
+          if (ev.start.dateTime) {
+            disponibles.push({ s: new Date(ev.start.dateTime).getTime(), e: new Date(ev.end.dateTime).getTime() });
+            if (!ev.recurringEventId) sueltos.push(Utilities.formatDate(new Date(ev.start.dateTime), TZ, 'yyyy-MM-dd'));
+          }
           return;
         }
         if (b.sinId && ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.apv_id === b.sinId) return;
@@ -110,7 +115,7 @@ function ocupado(b) {
       token = r.nextPageToken;
     } while (token);
   });
-  return { disponibles: disponibles, ocupados: ocupados, feriados: feriados(desde, hasta) };
+  return { disponibles: disponibles, ocupados: ocupados, feriados: feriados(desde, hasta, b.cfg, sueltos) };
 }
 
 function calendariosPropios() {
@@ -125,23 +130,41 @@ function calendariosPropios() {
   return lista;
 }
 
-function feriados(desde, hasta) {
+// Días sin encuentros: los feriados del calendario de Google (sin las celebraciones que no son feriado,
+// como Fin de Año o las fechas religiosas provisionales) más los de la pestaña «Feriados» de
+// 08 · Calendarios del Kit de Audición, donde Fede también anota sus vacaciones.
+// Si Fede quiere trabajar un feriado, crea ese día un evento «Disponible» suelto (no repetido) en
+// «APV · Disponibilidad»: ese día deja de contar como feriado.
+var NO_FERIADO = /provisional|fin de año|nochebuena|pascua|ramad|ayuno|rosh|kipur|januc|día de la madre|día del padre|día del niño/i;
+function feriados(desde, hasta, cfg, sueltos) {
+  var dias = {};
   try {
     var r = Calendar.Events.list(FERIADOS_CAL, { timeMin: desde.toISOString(), timeMax: hasta.toISOString(), singleEvents: true, maxResults: 250 });
-    return (r.items || [])
-      .filter(function (ev) { return ev.start.date && !/observ|conmemora|no laborable/i.test((ev.description || '') + ' ' + (ev.summary || '')); })
-      .map(function (ev) { return ev.start.date; });
-  } catch (err) {
-    return [];
+    (r.items || []).forEach(function (ev) {
+      if (ev.start.date && !NO_FERIADO.test(ev.summary || '')) dias[ev.start.date] = true;
+    });
+  } catch (err) {}
+  if (cfg && cfg.feriadosSheet) {
+    try {
+      var hoja = SpreadsheetApp.openById(cfg.feriadosSheet).getSheetByName('Feriados');
+      hoja.getRange('A2:A200').getValues().forEach(function (fila) {
+        var v = fila[0], d = null;
+        if (v instanceof Date) d = Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+        else { var m = /(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(String(v)); if (m) d = m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2); }
+        if (d) dias[d] = true;
+      });
+    } catch (err) {}
   }
+  (sueltos || []).forEach(function (d) { delete dias[d]; });
+  return Object.keys(dias);
 }
 
 // ¿Cada horario cae entero dentro de un bloque disponible, fuera de feriados y sin choques?
 // sesiones: [{inicio, fin}]. sinId: ignora los eventos de esa misma reserva (para moverla).
-function libres(sesiones, sinId) {
+function libres(sesiones, sinId, cfg) {
   var min = Math.min.apply(null, sesiones.map(function (x) { return Number(x.inicio); }));
   var max = Math.max.apply(null, sesiones.map(function (x) { return Number(x.fin); }));
-  var a = ocupado({ desde: min - 86400000, hasta: max + 86400000, sinId: sinId });
+  var a = ocupado({ desde: min - 86400000, hasta: max + 86400000, sinId: sinId, cfg: cfg || CFG_ACTUAL });
   return sesiones.every(function (x) {
     var ini = Number(x.inicio), fin = Number(x.fin);
     if (a.feriados.indexOf(Utilities.formatDate(new Date(ini), TZ, 'yyyy-MM-dd')) >= 0) return false;

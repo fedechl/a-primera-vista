@@ -192,7 +192,7 @@
       </div>
       <div id="bloque-sim" hidden>
         <h2>Elegí el horario de tus simulacros</h2>
-        <p class="suave">Los viernes, 30 minutos, en las últimas 4 semanas de encuentros.</p>
+        <p class="suave">Los 4 viernes antes de tu audición, 30 minutos cada uno.</p>
         <div class="horas" id="horas-sim" role="group" aria-label="Horarios de simulacro"></div>
       </div>
       <p class="error" id="error-turnos" hidden></p>
@@ -520,7 +520,7 @@
       ? 'Si necesitás mover algo, lo hacés vos desde ese mail, con 24 h de aviso y dentro de la misma semana (un cambio).'
       : 'Si necesitás mover un encuentro, lo hacés vos desde ese mail, con 24 h de aviso (hasta 2 cambios en el nivel).';
     document.querySelector('.despues li:first-child').textContent = 'Te llega un mail con todas tus fechas, el link de Zoom y un archivo para sumarlas a tu calendario.';
-    if (p.kit) $('texto-sena').textContent = 'Se paga al reservar. Elegís el primer encuentro y los demás quedan el mismo día y a la misma hora de cada semana, todos antes de tu audición del ' + fmt(new Date(audicion + 'T12:00:00-03:00').getTime(), { day: 'numeric', month: 'long' }) + '.';
+    if (p.kit) $('texto-sena').textContent = 'Se paga al reservar. El plan se arma hacia tu audición: los encuentros van el mismo día y a la misma hora, y las últimas 4 semanas suman el simulacro del viernes. Todo antes de tu audición del ' + fmt(new Date(audicion + 'T12:00:00-03:00').getTime(), { day: 'numeric', month: 'long' }) + '.';
   }
 
   fetch('/api/turnos?p=' + encodeURIComponent(producto) + (audicion ? '&audicion=' + encodeURIComponent(audicion) : '')).then(function (r) { return r.json(); }).then(function (r) {

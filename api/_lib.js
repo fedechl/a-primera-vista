@@ -90,6 +90,7 @@ export function cfg() {
     avisos: env('AVISOS_EMAIL'),
     muse: env('MUSE_EMAIL'),
     ventas: env('VENTAS_SHEET_ID'),
+    feriadosSheet: env('FERIADOS_SHEET_ID', '1cfg2D4-ls6NxlmFelWq917sHNc8iDM6nxEr00oMUkJY'),
     whatsapp: env('WHATSAPP', '5491178165441'),
     sitio: sitio(),
   };
@@ -227,8 +228,11 @@ export function calcularSerie(producto, inicio, disponibles, ocupados, feriados)
   return serie.length === p.cantidad ? serie : null;
 }
 
-// Kit: encuentros semanales desde el inicio elegido y simulacros los viernes (a simMin minutos del día),
-// en las últimas 4 semanas de encuentros. Todo antes del día de la audición. null si no entra.
+// Kit (como 08 · Calendarios del Kit de Audición): el plan se arma hacia atrás desde la audición.
+// Tramo intensivo: los 4 viernes antes de la audición (simulacros, 30 min) y, en esas mismas semanas,
+// un encuentro en el día y horario elegidos (si ese día no se puede, otro día de esa semana antes del viernes).
+// Base: los encuentros que faltan, desde el inicio elegido, cada 1 o 2 semanas, el mismo día y horario.
+// Express con 3 semanas: 3 simulacros y el encuentro que falta, dos días después del primero.
 function libreEn(a, s, dur, extra = []) {
   const e = s + dur * 60000;
   return !new Set(a.feriados || []).has(aAR(s).toISOString().slice(0, 10)) &&
@@ -236,28 +240,56 @@ function libreEn(a, s, dur, extra = []) {
     !(a.ocupados || []).some((o) => s < o.e && e > o.s) &&
     !extra.some((o) => s < o.e && e > o.s);
 }
+const DIA = 86400000, SEMANA = 7 * DIA;
+const lunesDe = (ms) => { const d = aAR(ms); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((d.getUTCDay() + 6) % 7)) - TZ_OFFSET_MIN * 60000; };
 export function planKit(producto, inicio, simMin, audicion, a) {
   const p = PRODUCTOS[producto];
-  const enc = [];
-  for (let w = 0; enc.length < p.cantidad && w < p.cantidad + 3; w++) {
-    const s = inicio + w * 7 * 86400000;
-    if (s + p.duracion * 60000 > audicion) return null;
-    if (libreEn(a, s, p.duracion)) enc.push(s);
-  }
-  if (enc.length < p.cantidad) return null;
-  const ocupadoEnc = enc.map((s) => ({ s, e: s + p.duracion * 60000 }));
-  // Viernes de la semana del encuentro (cantidad - 4) en adelante.
-  const ref = aAR(enc[p.cantidad - p.simulacros]);
-  const lunes = Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate() - ((ref.getUTCDay() + 6) % 7));
+  const ahora = Date.now() + 24 * 3600000;
+  const offsetEnSemana = inicio - lunesDe(inicio); // día y hora elegidos, dentro de la semana
+  const usados = [];
+  const ocupa = (s, dur) => usados.push({ s, e: s + dur * 60000 });
+  // 1. Simulacros: viernes antes de la audición, hacia atrás.
   const sims = [];
+  let lunesAud = lunesDe(audicion - 1);
   for (let w = 0; sims.length < p.simulacros && w < 8; w++) {
-    const s = lunes + (w * 7 + 4) * 86400000 + simMin * 60000 - TZ_OFFSET_MIN * 60000;
-    if (s + DURACION_SIMULACRO * 60000 > audicion) break;
-    if (s < Date.now() + 24 * 3600000) continue;
-    if (libreEn(a, s, DURACION_SIMULACRO, ocupadoEnc)) sims.push(s);
+    const s = lunesAud - w * SEMANA + 4 * DIA + simMin * 60000;
+    if (s + DURACION_SIMULACRO * 60000 > audicion) continue;
+    if (s < Math.max(ahora, lunesDe(inicio))) break;
+    if (libreEn(a, s, DURACION_SIMULACRO)) { sims.unshift(s); ocupa(s, DURACION_SIMULACRO); }
   }
-  if (sims.length < p.simulacros) return null;
-  return { encuentros: enc, simulacros: sims };
+  const express3 = producto === 'kit-express' && sims.length === 3;
+  if (sims.length < p.simulacros && !express3) return null;
+  // 2. Encuentros del tramo intensivo, en las semanas de los simulacros.
+  const intensivos = [];
+  for (const sm of sims) {
+    const lun = lunesDe(sm);
+    const candidatos = [lun + offsetEnSemana, lun + 2 * DIA + (offsetEnSemana % DIA), lun + (offsetEnSemana % DIA), lun + DIA + (offsetEnSemana % DIA), lun + 3 * DIA + (offsetEnSemana % DIA), lun + 4 * DIA + (offsetEnSemana % DIA)];
+    const s = candidatos.find((c) => c >= ahora && c >= inicio - DIA && c + p.duracion * 60000 <= audicion && libreEn(a, c, p.duracion, usados));
+    if (s == null) return null;
+    intensivos.push(s); ocupa(s, p.duracion);
+  }
+  if (express3) { // el encuentro que falta: dos días después del primero, mismo horario
+    const s = intensivos[0] + 2 * DIA;
+    if (!(s < sims[0] || lunesDe(s) === lunesDe(sims[0])) || !libreEn(a, s, p.duracion, usados)) return null;
+    intensivos.push(s); ocupa(s, p.duracion);
+    intensivos.sort((x, y) => x - y);
+  }
+  // 3. Base: desde el inicio elegido, cada 1 o 2 semanas, antes del tramo intensivo.
+  const base = [];
+  const cantBase = p.cantidad - intensivos.length;
+  if (cantBase > 0) {
+    const finBase = lunesDe(Math.min(...sims, ...intensivos));
+    const semanasBase = Math.floor((finBase - lunesDe(inicio)) / SEMANA);
+    if (semanasBase < cantBase) return null;
+    const paso = Math.min(2, Math.floor(semanasBase / cantBase));
+    let w = 0;
+    while (base.length < cantBase && lunesDe(inicio) + w * SEMANA < finBase) {
+      const s = inicio + w * SEMANA;
+      if (libreEn(a, s, p.duracion, usados)) { base.push(s); ocupa(s, p.duracion); w += paso; } else w += 1;
+    }
+    if (base.length < cantBase) return null;
+  } else if (lunesDe(inicio) > lunesDe(intensivos[0])) return null;
+  return { encuentros: [...base, ...intensivos].sort((x, y) => x - y), simulacros: sims };
 }
 export function turnosDeKit(producto, audicion, a) {
   const dias = calcularTurnos(producto, a.disponibles || [], a.ocupados || [], a.feriados || []);
