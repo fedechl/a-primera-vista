@@ -53,7 +53,8 @@ export default async function handler(req, res) {
       method: 'POST',
       body: JSON.stringify({
         items: [{ id: b.p, title: `${titulo} · A Primera Vista`, quantity: 1, unit_price: m.ahora, currency_id: 'ARS' }],
-        payer: { name: nombre, email },
+        // En la versión de prueba no se precarga el mail: el modo prueba de Mercado Pago rechaza mails reales.
+        ...(process.env.VERCEL_ENV === 'production' ? { payer: { name: nombre, email } } : {}),
         external_reference: id,
         statement_descriptor: 'APRIMERAVISTA',
         notification_url: `${sitio()}/api/mp`,
