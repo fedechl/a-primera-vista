@@ -205,7 +205,7 @@
         </ul>
         <p>Llega por WhatsApp, los viernes a las 9. Con 15 minutos por lectura alcanza.</p>
         <p><b>$50.000 por mes</b> con la promo de lanzamiento (después, $76.100). Se cobra solo cada mes con Mercado Pago y te das de baja cuando quieras desde tu cuenta, sin tener que explicar nada.</p>
-        <p style="margin-top:18px"><a class="boton" href="https://mpago.la/2cSSFMo" rel="noopener">Suscribirme con Mercado Pago</a></p>
+        <p style="margin-top:18px"><a class="boton" id="ir-club" href="https://mpago.la/2cSSFMo" rel="noopener">Suscribirme con Mercado Pago</a></p>
       </div>
       <blockquote class="cita">«Comparto todo lo que decís, porque nos sucede.»<cite>Barítono del Coro Estable del Teatro Argentino, sobre el podcast del Club</cite></blockquote>
       <p class="duda">Si todavía no trabajamos juntos, el Club no es el primer paso: empezá por el <a href="?p=diagnostico">Diagnóstico</a>.</p>
@@ -366,6 +366,22 @@
 
   var producto = q.get('p'), p = PRODUCTOS[producto], elegido = null;
 
+  // Embudo: cada paso se anota sin datos personales (una sesión al azar por pestaña y de dónde vino).
+  var sesion = '', origen = '';
+  try {
+    sesion = sessionStorage.getItem('apv_sesion') || Math.random().toString(36).slice(2, 12);
+    sessionStorage.setItem('apv_sesion', sesion);
+    origen = sessionStorage.getItem('apv_origen') || q.get('utm_source') || (document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, '') : '') || 'directo';
+    if (/aprimeravista|leeraprimeravista/.test(origen) && !sessionStorage.getItem('apv_origen')) origen = 'web propia';
+    sessionStorage.setItem('apv_origen', origen);
+  } catch (e) { sesion = sesion || Math.random().toString(36).slice(2, 12); }
+  var paso = function (nombre, detalle) {
+    var datos = JSON.stringify({ sesion: sesion, paso: nombre, propuesta: producto || 'elección', detalle: detalle || '', origen: origen });
+    try { if (navigator.sendBeacon && navigator.sendBeacon('/api/evento', datos)) return; } catch (e) {}
+    try { fetch('/api/evento', { method: 'POST', body: datos, keepalive: true }); } catch (e) {}
+  };
+  if (!(q.get('id') && q.get('k'))) paso('Entró');
+
   // País del WhatsApp: bandera y código ya puestos. Argentina va con el 9 de celulares incluido.
   var PAISES = [
     ['AR', 'Argentina', '+54 9'], ['UY', 'Uruguay', '+598'], ['CL', 'Chile', '+56'], ['PY', 'Paraguay', '+595'],
@@ -521,10 +537,12 @@
       var semanas = Math.floor(dias / 7);
       var kit = semanas < 3 ? null : semanas < 8 ? 'kit-express' : semanas < 12 ? 'kit-calma' : 'kit-puente';
       if (!kit) {
+        paso('Puso la fecha de audición', semanas + ' semanas · sin Kit');
         $('kit-resultado').innerHTML = '<div class="caja"><p>Con menos de 3 semanas no llega a armarse un Kit completo.</p><p>Lo que sí podemos hacer es un <b>Encuentro a medida</b> sobre el material de tu audición.</p><p><a class="boton" href="?p=encuentro-a-medida">Reservar un Encuentro a medida</a></p></div>';
         return;
       }
       var k = PRODUCTOS[kit];
+      paso('Puso la fecha de audición', semanas + ' semanas · ' + kit);
       $('kit-resultado').innerHTML = '<div class="opcion"><p class="suave">Faltan ' + semanas + ' semanas: te corresponde</p><h3>' + esc(k.nombre) + '</h3><p>' + esc(k.bajada) + '</p>' +
         '<p class="precio">' + pesos(k.tarjeta) + ' · ' + pesos(k.transferencia) + ' con descuento por transferencia</p>' +
         '<p style="margin-top:14px"><a class="boton" href="?p=' + kit + '&audicion=' + f + '">Elegir mis horarios</a></p></div>';
@@ -537,6 +555,7 @@
     $('bajada').textContent = 'Para que lo que ya ordenaste no se oxide, con muy poco tiempo.';
     document.title = 'Club de Lectura Musical · A Primera Vista';
     mostrar('paso-club');
+    $('ir-club').onclick = function () { paso('Fue a suscribirse al Club'); };
     return;
   }
 
@@ -601,8 +620,9 @@
         $('error-turnos').innerHTML = 'Tu Nivel ' + p.requiere + ' termina el ' + esc(cuando(desdeAcceso)) + ', y el Nivel ' + (p.requiere + 1) + ' arranca después. Volvé a entrar en unos días, o escribime por <a href="' + WA + '">WhatsApp</a> y te guardo tu horario.';
         $('error-turnos').hidden = false; return;
       }
+      paso('Vio horarios', dias.length ? dias.length + ' días con lugar' : 'sin lugar');
       pintarDias(dias, elegirHora);
-    }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
+    }).catch(function (e) { paso('Error', 'horarios: ' + (e.message || '')); $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
   }
 
   // Niveles 2 y 3: primero el mail, para ver si ya hizo el nivel anterior.
@@ -622,6 +642,7 @@
           $('enviar-acceso').disabled = false;
           if (r.error) throw new Error(r.error);
           if (r.prueba) $('aviso-prueba').hidden = false;
+          paso(pidiendo ? 'Pidió acceso' : 'Revisó acceso', pidiendo ? '' : (r.ok ? 'habilitado' : 'no encontrado'));
           if (pidiendo) {
             fin(r.yaEsta ? '<p>Ya estás habilitado: <a href="?p=' + producto + '">reservá tu Nivel ' + (nAnt + 1) + '</a> con ese mail.</p>'
               : '<p><b>Listo, ya me llegó tu pedido.</b></p><p>Lo reviso y, apenas te habilito, te llega un mail a ' + esc(email) + ' con el link para reservar el Nivel ' + (nAnt + 1) + '.</p>');
@@ -676,6 +697,7 @@
       $('elegido').innerHTML = p.nombre + ': <b>' + esc(cuando(ms)) + '</b><button type="button" id="cambiar">Cambiar</button>';
     }
     $('cambiar').onclick = function () { mostrar('paso-turno'); };
+    paso('Eligió horario', fmt(ms, { weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: false }));
     $('error-form').hidden = true;
     mostrar('paso-datos');
     $('form').nombre.focus();
@@ -686,7 +708,8 @@
     var f = ev.target, datos = {
       p: producto, inicio: elegido, nombre: f.nombre.value, email: f.email.value,
       whatsapp: (f.pais.value === '+' ? '' : f.pais.value + ' ') + f.whatsapp.value.trim(), nota: f.nota.value, origen: f.origen.value, medio: f.medio.value,
-      audicion: audicion || undefined, simulacro: simElegido != null ? simElegido : undefined
+      audicion: audicion || undefined, simulacro: simElegido != null ? simElegido : undefined,
+      sesion: sesion, origenWeb: origen
     };
     if (!datos.nombre.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(datos.email.trim()) || f.whatsapp.value.replace(/\D/g, '').length < 7) {
       $('error-form').textContent = 'Revisá tu nombre, tu mail y tu WhatsApp.'; $('error-form').hidden = false; return;
@@ -696,6 +719,7 @@
       .then(function (r) { return r.json(); })
       .then(function (r) {
         if (r.error) throw new Error(r.error);
+        paso('Envió la reserva', datos.medio);
         if (r.prueba) {
           fin('<p><b>Modo prueba.</b> Acá iría ' + (datos.medio === 'tarjeta' ? 'el pago de Mercado Pago por ' + pesos(r.montos.ahora) : 'la pantalla con los datos para transferir ' + pesos(r.montos.ahora)) + '.</p><p>' + esc(p.nombre) + ': ' + esc(cuando(elegido)) + '.</p>');
           return;
@@ -715,6 +739,7 @@
           '<p class="suave">También te mandé estos datos por mail.</p>');
       })
       .catch(function (e) {
+        paso('Error', 'reserva: ' + (e.message || ''));
         $('error-form').textContent = e.message || 'Algo falló. Probá de nuevo.'; $('error-form').hidden = false;
         $('enviar').disabled = false; $('enviar').textContent = textoBoton();
       });

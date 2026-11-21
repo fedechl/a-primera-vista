@@ -82,6 +82,7 @@ export default async function handler(req, res) {
         total: m.total, ahora: m.ahora, saldo: m.saldo, creditoUsado: m.credito || 0,
         ...(p.maxMov != null ? { maxMov: p.maxMov } : {}), ...(p.mismaSemana ? { mismaSemana: true } : {}),
         ...(aud ? { audicion: aud } : {}),
+        sesion: limpiar(b.sesion, 24), origenWeb: limpiar(b.origenWeb, 60),
       },
       confirmarUrl: `${sitio()}/api/confirmar?id=${id}&k=${firmar('confirmar', id)}`,
       verUrl: `${sitio()}/reservar/?id=${id}&k=${ver}`,

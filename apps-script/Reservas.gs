@@ -59,7 +59,7 @@ function doPost(e) {
     CFG_ACTUAL = b.cfg || null;
     if (!b.secret || b.secret !== PropertiesService.getScriptProperties().getProperty('SECRET')) throw new Error('clave inválida');
     var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito,
-      habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar };
+      habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar, evento: evento };
     if (!acciones[b.accion]) throw new Error('acción desconocida');
     salida = acciones[b.accion](b);
   } catch (err) {
@@ -277,6 +277,7 @@ function confirmar(b) {
     var nv = /^nivel-(\d)$/.exec(r.producto);
     if (nv) guardarNivel(r.email, Number(nv[1]), Math.max.apply(null, sesiones.map(function (x) { return x.fin; })));
     var fila = cargarVenta(r, pago, c, b.id);
+    registrarEvento(c, r.sesion || '', 'Pagó', r.producto, pago.medio || r.medio, r.origenWeb || '', true);
     mailMusicoConfirmada(r, sesiones, c, p0.apv_ver);
     mailMuse(r, sesiones, pago, c, fila);
     return { estado: 'confirmada', nombre: r.nombre };
@@ -405,7 +406,52 @@ function guardarNivel(email, n, fin) {
 function habilitado(b) {
   var nivel = Number(b.nivel), x = leerNivel(b.email);
   if (x.n >= nivel - 1) return { ok: true, desde: x.n === nivel - 1 ? (x.fin || 0) : 0 };
+  if (nivelEnFichas(b.email, b.cfg || CFG_ACTUAL || {}) >= nivel - 1) return { ok: true, desde: 0 };
   return { ok: false };
+}
+// La base de clientes: 02 › Fichas. Si el mail figura en Navegar la Partitura (Recorrido A), vale su Nivel.
+function nivelEnFichas(email, c) {
+  try {
+    var id = c.ventas; if (!id) return 0;
+    var hoja = SpreadsheetApp.openById(id).getSheetByName('Fichas'); if (!hoja) return 0;
+    var datos = hoja.getDataRange().getValues();
+    var fila = -1, cols = {};
+    for (var i = 0; i < Math.min(datos.length, 10); i++) {
+      if (datos[i].indexOf('Músico') >= 0 && datos[i].indexOf('Mail') >= 0) { fila = i; datos[i].forEach(function (t, j) { cols[t] = j; }); break; }
+    }
+    if (fila < 0) return 0;
+    var mail = String(email || '').trim().toLowerCase(), mejor = 0;
+    for (var r = fila + 1; r < datos.length; r++) {
+      var d = datos[r];
+      var mails = String(d[cols['Mail']] || '').toLowerCase().split(/[\s,;]+/);
+      if (mails.indexOf(mail) < 0) continue;
+      if (String(d[cols['Recorrido']]).trim() !== 'A') continue;
+      mejor = Math.max(mejor, Number(d[cols['Nivel']]) || 0);
+    }
+    return mejor;
+  } catch (e) { return 0; }
+}
+
+// ---------- Embudo de la página de reservas ----------
+// Cada paso queda en 02 › Captación · Reservas web: sin datos personales, solo una sesión anónima.
+var PASOS = ['Entró', 'Puso la fecha de audición', 'Vio horarios', 'Eligió horario', 'Revisó acceso', 'Pidió acceso', 'Envió la reserva', 'Error', 'Fue a suscribirse al Club', 'Pagó'];
+function evento(b) {
+  if (PASOS.indexOf(b.paso) < 0) return { ok: false };
+  registrarEvento(b.cfg || {}, b.sesion, b.paso, b.propuesta, b.detalle, b.origen);
+  return { ok: true };
+}
+function registrarEvento(c, sesion, paso, propuesta, detalle, origen, yaConLock) {
+  try {
+    if (!c.ventas) return;
+    var hoja = SpreadsheetApp.openById(c.ventas).getSheetByName('Captación · Reservas web'); if (!hoja) return;
+    var corto = function (s, n) { return String(s || '').replace(/[\u0000-\u001f]/g, ' ').slice(0, n); };
+    var lock = yaConLock ? null : LockService.getScriptLock(); if (lock && !lock.tryLock(8000)) return;
+    // La tabla de datos va en A:F desde la fila 5 (a la derecha está el resumen): primera fila libre de la columna A.
+    var fila = hoja.getRange('A5').isBlank() ? 5 : hoja.getRange('A4').getNextDataCell(SpreadsheetApp.Direction.DOWN).getRow() + 1;
+    if (fila > hoja.getMaxRows()) hoja.insertRowsAfter(hoja.getMaxRows(), 1000);
+    hoja.getRange(fila, 1, 1, 6).setValues([[new Date(), corto(sesion, 24), paso, corto(propuesta, 40), corto(detalle, 120), corto(origen, 60)]]);
+    SpreadsheetApp.flush(); if (lock) lock.releaseLock();
+  } catch (e) { /* el embudo nunca frena una reserva */ }
 }
 function pedirAcceso(b) {
   var c = b.cfg || {}, nivel = Number(b.nivel);
