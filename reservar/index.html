@@ -25,7 +25,7 @@
   h1 { font-weight: 500; font-size: clamp(36px, 8vw, 54px); line-height: 1.08; letter-spacing: -0.015em; margin-top: 28px; }
   .bajada { color: rgba(255,255,255,0.8); margin-top: 12px; max-width: 40ch; }
   main { padding: 36px 0 64px; }
-  h2 { font-weight: 500; font-size: 26px; line-height: 1.2; margin: 32px 0 14px; }
+  h2 { font-weight: 500; font-size: 26px; line-height: 1.2; margin: 32px 0 18px; }
   h2:first-child { margin-top: 0; }
   .suave { color: var(--texto-suave); font-size: 17px; }
   .aviso-prueba { background: #FFF6E0; border: 1px solid var(--dorado-claro); padding: 10px 14px; font-size: 16px; border-radius: 6px; margin-bottom: 24px; }
@@ -36,12 +36,14 @@
   .opcion p { color: var(--texto-suave); font-size: 17px; margin-top: 4px; }
   .opcion .precio { color: var(--texto); font-weight: 600; margin-top: 8px; }
 
-  .dias { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; scroll-snap-type: x proximity; }
+  .dias { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 10px; scroll-snap-type: x proximity; }
+  #bloque-horas { margin-top: 40px; }
+  .horas { margin-top: 4px; }
   .dia, .hora { font: inherit; cursor: pointer; border: 1px solid var(--linea); background: #fff; color: var(--texto); border-radius: 8px; }
   .dia { flex: 0 0 auto; min-width: 74px; padding: 8px 10px; text-align: center; line-height: 1.25; scroll-snap-align: start; }
   .dia small { display: block; font-size: 14px; color: var(--texto-suave); text-transform: capitalize; }
   .dia b { font-size: 22px; font-weight: 600; }
-  .horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 12px; }
   .hora { padding: 10px 0; font-weight: 600; }
   .dia[aria-pressed="true"], .hora[aria-pressed="true"] { background: var(--azul); color: #fff; border-color: var(--azul); }
   .dia[aria-pressed="true"] small { color: var(--dorado-claro); }
