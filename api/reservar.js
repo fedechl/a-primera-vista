@@ -1,7 +1,7 @@
 // POST /api/reservar {p, inicio, nombre, email, whatsapp, medio, nota}
 // Retiene el turno en el calendario y, con tarjeta, arma el pago de Mercado Pago.
 import {
-  PRODUCTOS, RETENCION_TARJETA_MIN, RETENCION_TRANSFERENCIA_H, SEMANAS_MAX_PACK, calcularSerie, firmar, gas, json,
+  PRODUCTOS, RETENCION_TARJETA_MIN, RETENCION_TRANSFERENCIA_H, SEMANAS_MAX_PACK, DURACION_SIMULACRO, audicionMs, calcularSerie, planKit, firmar, gas, json,
   leerAgenda, leerCuerpo, modoPrueba, montos, mp, nuevoId, sitio, turnoPlausible,
 } from './_lib.js';
 
@@ -30,8 +30,22 @@ export default async function handler(req, res) {
   const ver = firmar('ver', id);
 
   // Niveles: las 8 fechas salen del mismo día y horario semanal.
+  // Kits: además, los simulacros de los viernes en el horario elegido.
   let inicios = [inicio];
-  if (p.cantidad > 1) {
+  let sesiones = null;
+  const aud = p.kit ? audicionMs(b.audicion) : null;
+  if (p.kit) {
+    if (!aud) return json(res, 400, { error: 'Falta la fecha de tu audición.' });
+    const semanas = Math.ceil((aud - Date.now()) / (7 * 86400000)) + 1;
+    const a = await leerAgenda(Math.min(semanas, 20)).catch(() => null);
+    const plan = a && planKit(b.p, inicio, Number(b.simulacro), aud, a);
+    if (!plan) return json(res, 409, { error: 'Esos horarios ya no tienen lugar antes de tu audición. Elegí otros.' });
+    inicios = plan.encuentros;
+    sesiones = [
+      ...plan.encuentros.map((s, i) => ({ inicio: s, fin: s + p.duracion * 60000, tipo: 'encuentro', n: i + 1 })),
+      ...plan.simulacros.map((s, i) => ({ inicio: s, fin: s + DURACION_SIMULACRO * 60000, tipo: 'simulacro', n: i + 1 })),
+    ].sort((x, y) => x.inicio - y.inicio);
+  } else if (p.cantidad > 1) {
     const a = await leerAgenda(SEMANAS_MAX_PACK).catch(() => null);
     const serie = a && calcularSerie(b.p, inicio, a.disponibles || [], a.ocupados || [], a.feriados || []);
     if (!serie) return json(res, 409, { error: 'Ese horario ya no tiene lugar para los ' + p.cantidad + ' encuentros. Elegí otro.' });
@@ -48,16 +62,18 @@ export default async function handler(req, res) {
     ? ahora + RETENCION_TARJETA_MIN * 60000
     : Math.min(ahora + RETENCION_TRANSFERENCIA_H * 3600000, inicios[0] - 3600000);
 
-  if (modoPrueba()) return json(res, 200, { prueba: true, id, k: ver, medio, montos: m, fechas: inicios });
+  if (modoPrueba()) return json(res, 200, { prueba: true, id, k: ver, medio, montos: m, fechas: inicios, sesiones });
 
   try {
     const hold = await gas('retener', {
       id, expira,
       inicio: inicios[0], fin: inicios[0] + p.duracion * 60000, // compatibilidad con la versión anterior de Apps Script
-      sesiones: inicios.map((s) => ({ inicio: s, fin: s + p.duracion * 60000 })),
+      sesiones: sesiones || inicios.map((s, i) => ({ inicio: s, fin: s + p.duracion * 60000, tipo: 'encuentro', n: i + 1 })),
       reserva: {
         producto: b.p, productoNombre: p.nombre, nombre, email, whatsapp, nota, origen, medio, duracion: p.duracion,
         total: m.total, ahora: m.ahora, saldo: m.saldo, creditoUsado: m.credito || 0,
+        ...(p.maxMov != null ? { maxMov: p.maxMov } : {}), ...(p.mismaSemana ? { mismaSemana: true } : {}),
+        ...(aud ? { audicion: aud } : {}),
       },
       confirmarUrl: `${sitio()}/api/confirmar?id=${id}&k=${firmar('confirmar', id)}`,
       verUrl: `${sitio()}/reservar/?id=${id}&k=${ver}`,
@@ -65,7 +81,7 @@ export default async function handler(req, res) {
     if (!hold.ok) return json(res, 409, { error: 'Ese horario se acaba de ocupar. Elegí otro.' });
 
     if (medio === 'transferencia') {
-      return json(res, 200, { id, k: ver, medio, montos: m, fechas: inicios, transferencia: hold.transferencia });
+      return json(res, 200, { id, k: ver, medio, montos: m, fechas: inicios, sesiones, transferencia: hold.transferencia });
     }
 
     const titulo = (p.sena < 1 ? `${p.nombre} · seña del ${Math.round(p.sena * 100)} %` : p.nombre) +

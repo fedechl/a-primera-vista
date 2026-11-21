@@ -27,16 +27,31 @@ export const PRODUCTOS = {
   'nivel-1': { nombre: 'Navegar la Partitura · Nivel 1', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
   'nivel-2': { nombre: 'Navegar la Partitura · Nivel 2', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
   'nivel-3': { nombre: 'Navegar la Partitura · Nivel 3', duracion: 60, cantidad: 8, tarjeta: 538000, transferencia: 494960, sena: 1, credito: true },
+  // Kit de Audición: encuentros semanales + 4 simulacros de viernes (30 min), todo antes de la audición.
+  // Un solo cambio, dentro de la misma semana (05 · Precios y reglas).
+  'kit-express': { nombre: 'Kit de Audición · Express', duracion: 60, cantidad: 4, simulacros: 4, semanasMin: 3, tarjeta: 418500, transferencia: 385020, sena: 1, kit: true, maxMov: 1, mismaSemana: true },
+  'kit-calma': { nombre: 'Kit de Audición · Calma', duracion: 60, cantidad: 8, simulacros: 4, semanasMin: 8, tarjeta: 609700, transferencia: 560924, sena: 1, kit: true, maxMov: 1, mismaSemana: true },
+  'kit-puente': { nombre: 'Kit de Audición · Puente', duracion: 60, cantidad: 12, simulacros: 4, semanasMin: 12, tarjeta: 848800, transferencia: 780896, sena: 1, kit: true, maxMov: 1, mismaSemana: true },
 };
 export const SEMANAS_MAX_PACK = 10; // el nivel se completa dentro de las 10 semanas
+export const DURACION_SIMULACRO = 30;
+
+// Qué Kit corresponde según cuántas semanas faltan para la audición (04 › P05).
+export function kitParaSemanas(semanas) {
+  if (semanas < 3) return null;
+  if (semanas < 8) return 'kit-express';
+  if (semanas < 12) return 'kit-calma';
+  return 'kit-puente';
+}
+// 'AAAA-MM-DD' → medianoche de ese día en Argentina (ms). La audición es ese día: todo tiene que ser antes.
+export function audicionMs(fecha) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(fecha || ''));
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) - TZ_OFFSET_MIN * 60000 : null;
+}
 
 // La disponibilidad sale del calendario «APV · Disponibilidad» de Fede (se edita semana a semana).
-// Estos horarios son solo los de muestra del modo prueba (los mismos que tenía Agora). 1 = lunes … 5 = viernes.
-export const HORARIOS_PRUEBA = {
-  1: [[9, 12], [13, 16]],
-  3: [[9, 15]],
-  5: [[9, 12], [13, 16]],
-};
+// Estos horarios son solo los de muestra del modo prueba (lunes a viernes de 9 a 16). 1 = lunes … 5 = viernes.
+export const HORARIOS_PRUEBA = { 1: [[9, 16]], 2: [[9, 16]], 3: [[9, 16]], 4: [[9, 16]], 5: [[9, 16]] };
 export const PASO_MIN = 60;          // los turnos arrancan cada 60 minutos
 export const ANTICIPACION_H = 24;    // se reserva con 24 h de anticipación mínima
 export const DIAS_VISIBLES = 21;     // cuántos días hacia adelante se muestran
@@ -210,6 +225,56 @@ export function calcularSerie(producto, inicio, disponibles, ocupados, feriados)
     if (libre(s)) serie.push(s);
   }
   return serie.length === p.cantidad ? serie : null;
+}
+
+// Kit: encuentros semanales desde el inicio elegido y simulacros los viernes (a simMin minutos del día),
+// en las últimas 4 semanas de encuentros. Todo antes del día de la audición. null si no entra.
+function libreEn(a, s, dur, extra = []) {
+  const e = s + dur * 60000;
+  return !new Set(a.feriados || []).has(aAR(s).toISOString().slice(0, 10)) &&
+    (a.disponibles || []).some((d) => s >= d.s && e <= d.e) &&
+    !(a.ocupados || []).some((o) => s < o.e && e > o.s) &&
+    !extra.some((o) => s < o.e && e > o.s);
+}
+export function planKit(producto, inicio, simMin, audicion, a) {
+  const p = PRODUCTOS[producto];
+  const enc = [];
+  for (let w = 0; enc.length < p.cantidad && w < p.cantidad + 3; w++) {
+    const s = inicio + w * 7 * 86400000;
+    if (s + p.duracion * 60000 > audicion) return null;
+    if (libreEn(a, s, p.duracion)) enc.push(s);
+  }
+  if (enc.length < p.cantidad) return null;
+  const ocupadoEnc = enc.map((s) => ({ s, e: s + p.duracion * 60000 }));
+  // Viernes de la semana del encuentro (cantidad - 4) en adelante.
+  const ref = aAR(enc[p.cantidad - p.simulacros]);
+  const lunes = Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth(), ref.getUTCDate() - ((ref.getUTCDay() + 6) % 7));
+  const sims = [];
+  for (let w = 0; sims.length < p.simulacros && w < 8; w++) {
+    const s = lunes + (w * 7 + 4) * 86400000 + simMin * 60000 - TZ_OFFSET_MIN * 60000;
+    if (s + DURACION_SIMULACRO * 60000 > audicion) break;
+    if (s < Date.now() + 24 * 3600000) continue;
+    if (libreEn(a, s, DURACION_SIMULACRO, ocupadoEnc)) sims.push(s);
+  }
+  if (sims.length < p.simulacros) return null;
+  return { encuentros: enc, simulacros: sims };
+}
+export function turnosDeKit(producto, audicion, a) {
+  const dias = calcularTurnos(producto, a.disponibles || [], a.ocupados || [], a.feriados || []);
+  const out = [], series = {}, sims = {};
+  for (const d of dias) {
+    const t = d.turnos.filter((s) => {
+      const opciones = {};
+      for (let m = 6 * 60; m <= 21 * 60; m += 30) {
+        const plan = planKit(producto, s, m, audicion, a);
+        if (plan) { opciones[m] = plan.simulacros; series[s] = plan.encuentros; }
+      }
+      if (Object.keys(opciones).length) { sims[s] = opciones; return true; }
+      return false;
+    });
+    if (t.length) out.push({ fecha: d.fecha, turnos: t });
+  }
+  return { dias: out, series, sims };
 }
 
 export function turnosDePack(producto, a) {

@@ -33,9 +33,9 @@ function instalar() {
   Logger.log('GAS_SECRET para Vercel: ' + props.getProperty('SECRET'));
 }
 
-// El calendario donde Fede marca cuándo atiende. Se crea una vez con los mismos horarios que tenía
-// Agora (lunes y viernes 9-12 y 13-16, miércoles 9-15), como eventos que se repiten cada semana:
-// para cambiar una semana, se mueve, se acorta o se borra ese bloque solo en esa semana.
+// El calendario donde Fede marca cuándo atiende. Se crea una vez con un bloque de lunes a viernes
+// de 9 a 16 que se repite cada semana (decisión de Fede, 21/11/2026): lo que ya está en sus otros
+// calendarios se bloquea solo, y para cambiar una semana se mueve, acorta o borra ese bloque.
 function calendarioDisponibilidad() {
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty('CAL_DISP');
@@ -44,11 +44,9 @@ function calendarioDisponibilidad() {
   cal = CalendarApp.createCalendar(CAL_DISPONIBILIDAD, { color: CalendarApp.Color.YELLOW, timeZone: TZ });
   props.setProperty('CAL_DISP', cal.getId());
   var hoy = new Date(), lunes = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - ((hoy.getDay() + 6) % 7) + 7);
-  [[0, 9, 12], [0, 13, 16], [2, 9, 15], [4, 9, 12], [4, 13, 16]].forEach(function (b) {
-    var d = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + b[0]);
-    var ini = new Date(d.getFullYear(), d.getMonth(), d.getDate(), b[1]), fin = new Date(d.getFullYear(), d.getMonth(), d.getDate(), b[2]);
-    cal.createEventSeries('Disponible', ini, fin, CalendarApp.newRecurrence().addWeeklyRule());
-  });
+  var ini = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate(), 9), fin = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate(), 16);
+  cal.createEventSeries('Disponible', ini, fin, CalendarApp.newRecurrence().addWeeklyRule()
+    .onlyOnWeekdays([CalendarApp.Weekday.MONDAY, CalendarApp.Weekday.TUESDAY, CalendarApp.Weekday.WEDNESDAY, CalendarApp.Weekday.THURSDAY, CalendarApp.Weekday.FRIDAY]));
   return cal;
 }
 
@@ -79,7 +77,9 @@ function ocupado(b) {
   var desde = new Date(Number(b.desde)), hasta = new Date(Number(b.hasta));
   var ocupados = [], disponibles = [];
   var dispId = PropertiesService.getScriptProperties().getProperty('CAL_DISP');
-  CalendarApp.getAllOwnedCalendars().forEach(function (cal) {
+  // Todos los calendarios en los que Fede es dueño o puede editar (el personal, Familia, el de RE/MAX…).
+  // Quedan afuera los que solo lee (feriados, calendarios importados de terceros).
+  calendariosPropios().forEach(function (cal) {
     var token, esDisp = cal.getId() === dispId;
     do {
       var r = Calendar.Events.list(cal.getId(), {
@@ -111,6 +111,18 @@ function ocupado(b) {
     } while (token);
   });
   return { disponibles: disponibles, ocupados: ocupados, feriados: feriados(desde, hasta) };
+}
+
+function calendariosPropios() {
+  var lista = [], token;
+  do {
+    var r = Calendar.CalendarList.list({ pageToken: token, maxResults: 250 });
+    (r.items || []).forEach(function (c) {
+      if ((c.accessRole === 'owner' || c.accessRole === 'writer') && c.id !== FERIADOS_CAL) lista.push({ getId: function () { return c.id; } });
+    });
+    token = r.nextPageToken;
+  } while (token);
+  return lista;
 }
 
 function feriados(desde, hasta) {
@@ -147,13 +159,29 @@ function buscarTodos(id) {
 
 function esPack(r) { return Number(r.cantidad || 1) > 1; }
 
-function tituloEvento(r, n) {
+// Cada sesión de una reserva: {inicio, fin, tipo ('encuentro' | 'simulacro'), n}.
+function etiqueta(x) { return (x.tipo === 'simulacro' ? 'Simulacro ' : 'Encuentro ') + x.n; }
+function tituloEvento(r, x) {
   if (!esPack(r)) return r.productoNombre + ' · ' + r.nombre;
-  return r.productoNombre + ' · ' + r.nombre + ' · Encuentro ' + n;
+  return r.productoNombre + ' · ' + r.nombre + ' · ' + etiqueta(x);
+}
+function maxMov(r) { return r.maxMov != null ? Number(r.maxMov) : MAX_MOVIMIENTOS; }
+// Normaliza las sesiones que llegan de Vercel (los niveles viejos no traen tipo ni n).
+function normalizar(sesiones) {
+  var cuenta = { encuentro: 0, simulacro: 0 };
+  return sesiones.map(function (x) {
+    var tipo = x.tipo || 'encuentro';
+    cuenta[tipo]++;
+    return { inicio: Number(x.inicio), fin: Number(x.fin), tipo: tipo, n: x.n || cuenta[tipo] };
+  });
+}
+function sesionDeEvento(ev, i) {
+  var p = ev.extendedProperties.private;
+  return { inicio: new Date(ev.start.dateTime).getTime(), fin: new Date(ev.end.dateTime).getTime(), tipo: p.apv_tipo || 'encuentro', n: Number(p.apv_n || i + 1) };
 }
 
 function retener(b) {
-  var sesiones = b.sesiones || [{ inicio: b.inicio, fin: b.fin }];
+  var sesiones = normalizar(b.sesiones || [{ inicio: b.inicio, fin: b.fin }]);
   var r = b.reserva;
   r.cantidad = sesiones.length;
   var lock = LockService.getScriptLock();
@@ -162,14 +190,14 @@ function retener(b) {
     if (!libres(sesiones)) return { ok: false };
     sesiones.forEach(function (x, i) {
       Calendar.Events.insert({
-        summary: '⏳ Pendiente de pago · ' + tituloEvento(r, i + 1),
+        summary: '⏳ Pendiente de pago · ' + tituloEvento(r, x),
         description: detalleInterno(r, b) + '\n\nSe libera sola si no se paga antes del ' + fechaLarga(new Date(Number(b.expira))) + '.',
         start: { dateTime: new Date(Number(x.inicio)).toISOString(), timeZone: TZ },
         end: { dateTime: new Date(Number(x.fin)).toISOString(), timeZone: TZ },
         colorId: COLOR_CLASES,
         reminders: { useDefault: false, overrides: [] },
         extendedProperties: { private: {
-          apv_id: b.id, apv_n: String(i + 1), apv_estado: 'pendiente', apv_expira: String(b.expira),
+          apv_id: b.id, apv_n: String(x.n), apv_tipo: x.tipo, apv_estado: 'pendiente', apv_expira: String(b.expira),
           apv_reserva: JSON.stringify(r).slice(0, 1000), apv_ver: b.verUrl || '',
         } },
       }, 'primary');
@@ -181,9 +209,8 @@ function retener(b) {
   var transferencia = null;
   if (r.medio === 'transferencia') {
     transferencia = { alias: c.alias, cbu: c.cbu, cbuEtiqueta: c.cbuEtiqueta || 'CBU', titular: c.titular, monto: r.ahora, vence: Number(b.expira) };
-    var fechas = sesiones.map(function (x) { return new Date(Number(x.inicio)); });
-    mailMusicoTransferencia(r, b, c, fechas);
-    mailAvisoTransferencia(r, b, c, fechas);
+    mailMusicoTransferencia(r, b, c, sesiones);
+    mailAvisoTransferencia(r, b, c, sesiones);
   }
   return { ok: true, transferencia: transferencia };
 }
@@ -210,23 +237,24 @@ function confirmar(b) {
       var p = ev.extendedProperties.private;
       p.apv_estado = 'confirmada';
       p.apv_pago = JSON.stringify(pago).slice(0, 500);
-      var n = Number(p.apv_n || i + 1);
+      var x = sesionDeEvento(ev, i);
       Calendar.Events.patch({
-        summary: tituloEvento(r, n),
+        summary: tituloEvento(r, x),
         location: c.zoom || '',
-        description: (esPack(r) ? 'Encuentro ' + n + ' de ' + r.cantidad + ' · ' : '') + 'Zoom: ' + (c.zoom || '(falta el link)') +
+        description: (esPack(r) ? etiqueta(x) + ' · ' + r.productoNombre + ' · ' : '') + 'Zoom: ' + (c.zoom || '(falta el link)') +
           '\n\n' + detalleInterno(r, b) + '\nPago: ' + textoPago(r, pago),
         attendees: [{ email: r.email, displayName: r.nombre }],
         reminders: { useDefault: true },
         extendedProperties: { private: p },
       }, 'primary', ev.id, { sendUpdates: esPack(r) ? 'none' : 'all' });
     });
-    var fechas = evs.map(function (ev) { return new Date(ev.start.dateTime); });
+    var sesiones = evs.map(sesionDeEvento);
     if (r.creditoUsado) usarCredito(r.email);
-    if (r.producto === 'diagnostico') guardarCredito(r.email, pago.monto || r.ahora);
+    if (r.producto === 'diagnostico') guardarCredito(r.email, pago.monto || r.ahora, 30 * 86400000, 'Diagnóstico');
+    if (/^kit-/.test(r.producto) && r.audicion) guardarCredito(r.email, 90000, Number(r.audicion) + 60 * 86400000 - Date.now(), 'Kit de Audición');
     var fila = cargarVenta(r, pago, c, b.id);
-    mailMusicoConfirmada(r, fechas, c, p0.apv_ver);
-    mailMuse(r, fechas, pago, c, fila);
+    mailMusicoConfirmada(r, sesiones, c, p0.apv_ver);
+    mailMuse(r, sesiones, pago, c, fila);
     return { estado: 'confirmada', nombre: r.nombre };
   } finally {
     lock.releaseLock();
@@ -239,13 +267,14 @@ function estado(b) {
   var p = evs[0].extendedProperties.private, r = JSON.parse(p.apv_reserva);
   var mov = Number(p.apv_mov || 0), ahora = Date.now();
   var sesiones = evs.map(function (ev, i) {
-    var ini = new Date(ev.start.dateTime).getTime();
-    return { n: Number(ev.extendedProperties.private.apv_n || i + 1), inicio: ini, cuando: fechaLarga(new Date(ini)), movible: ini - ahora >= 86400000 };
+    var x = sesionDeEvento(ev, i);
+    x.etiqueta = etiqueta(x); x.cuando = fechaLarga(new Date(x.inicio)); x.movible = x.inicio - ahora >= 86400000;
+    return x;
   });
   return {
     estado: p.apv_estado, producto: r.productoNombre, productoClave: r.producto, nombre: r.nombre, medio: r.medio,
-    movimientos: mov, maxMovimientos: MAX_MOVIMIENTOS,
-    puedeMover: p.apv_estado === 'confirmada' && mov < MAX_MOVIMIENTOS && sesiones.some(function (x) { return x.movible; }),
+    movimientos: mov, maxMovimientos: maxMov(r), mismaSemana: !!r.mismaSemana,
+    puedeMover: p.apv_estado === 'confirmada' && mov < maxMov(r) && sesiones.some(function (x) { return x.movible; }),
     inicio: sesiones[0].inicio, cuando: sesiones[0].cuando, sesiones: sesiones,
     ahora: r.ahora, saldo: r.saldo,
   };
@@ -265,15 +294,18 @@ function mover(b) {
   try {
     var evs = buscarTodos(b.id);
     if (!evs.length) return { ok: false, motivo: 'No encuentro la reserva.' };
-    var n = Number(b.n || 1);
-    var ev = evs.filter(function (x, i) { return Number(x.extendedProperties.private.apv_n || i + 1) === n; })[0];
+    var n = Number(b.n || 1), tipo = b.tipo || 'encuentro';
+    var ev = evs.filter(function (x, i) { var s = sesionDeEvento(x, i); return s.n === n && s.tipo === tipo; })[0];
     if (!ev) return { ok: false, motivo: 'No encuentro ese encuentro.' };
     var p = ev.extendedProperties.private, r = JSON.parse(p.apv_reserva);
     var mov = Number(evs[0].extendedProperties.private.apv_mov || 0), antes = new Date(ev.start.dateTime);
     if (p.apv_estado !== 'confirmada') return { ok: false, motivo: 'La reserva todavía no está confirmada.' };
     if (antes.getTime() - Date.now() < 86400000) return { ok: false, motivo: 'Falta menos de 24 h: para moverlo, escribime por WhatsApp.' };
-    if (mov >= MAX_MOVIMIENTOS) return { ok: false, motivo: 'Ya hiciste los ' + MAX_MOVIMIENTOS + ' cambios: escribime por WhatsApp y lo vemos.' };
-    var ini = Number(b.inicio), fin = Number(b.fin);
+    if (mov >= maxMov(r)) return { ok: false, motivo: (maxMov(r) === 1 ? 'Ya hiciste el cambio que incluye' : 'Ya hiciste los ' + maxMov(r) + ' cambios que incluye') + ' tu reserva: escribime por WhatsApp y lo vemos.' };
+    var ini = Number(b.inicio);
+    var fin = ini + (new Date(ev.end.dateTime).getTime() - antes.getTime());
+    if (r.mismaSemana && semanaDe(ini) !== semanaDe(antes.getTime())) return { ok: false, motivo: 'En el Kit, los cambios son dentro de la misma semana. Elegí otro día de esa semana.' };
+    if (r.audicion && ini >= Number(r.audicion)) return { ok: false, motivo: 'Ese horario queda después de tu audición. Elegí otro.' };
     if (!libres([{ inicio: ini, fin: fin }], b.id)) return { ok: false, motivo: 'Ese horario se acaba de ocupar. Elegí otro.' };
     if (evs.some(function (x) { return x.id !== ev.id && ini < new Date(x.end.dateTime).getTime() && fin > new Date(x.start.dateTime).getTime(); })) {
       return { ok: false, motivo: 'Ese horario choca con otro de tus encuentros. Elegí otro.' };
@@ -290,26 +322,35 @@ function mover(b) {
       Calendar.Events.patch(cambio, 'primary', x.id, { sendUpdates: x.id === ev.id ? 'all' : 'none' });
     });
     var c = b.cfg || {};
-    var cual = esPack(r) ? 'tu encuentro ' + n + ' de ' + r.productoNombre : 'tu ' + r.productoNombre;
+    var sx = { tipo: tipo, n: n };
+    var cual = esPack(r) ? 'tu ' + etiqueta(sx).toLowerCase() + ' de ' + r.productoNombre : 'tu ' + r.productoNombre;
     enviar(r.email, 'Movido: ' + cual + ' pasa al ' + fechaLarga(new Date(ini)),
       '<p>Hola, ' + primerNombre(r) + '.</p><p>Listo: ' + cual + ' pasó del ' + fechaLarga(antes) + ' al <b>' + fechaLarga(new Date(ini)) +
       '</b> (hora de Argentina). El link de Zoom es el mismo: <a href="' + c.zoom + '">' + c.zoom + '</a>.</p>' +
-      '<p>Te quedan ' + (MAX_MOVIMIENTOS - mov - 1) + ' cambios.</p>');
+      (maxMov(r) - mov - 1 > 0 ? '<p>Te queda' + (maxMov(r) - mov - 1 === 1 ? ' 1 cambio' : 'n ' + (maxMov(r) - mov - 1) + ' cambios') + '.</p>' : '<p>Con este, ya usaste los cambios que incluye tu reserva.</p>'));
     enviar(c.avisos, 'Reserva movida · ' + r.productoNombre + ' · ' + r.nombre,
-      '<p>' + r.nombre + ' movió ' + (esPack(r) ? 'el encuentro ' + n + ' de su ' + r.productoNombre : 'su ' + r.productoNombre) +
-      ' del ' + fechaLarga(antes) + ' al ' + fechaLarga(new Date(ini)) + ' (cambio ' + (mov + 1) + ' de ' + MAX_MOVIMIENTOS + ').</p>');
+      '<p>' + r.nombre + ' movió ' + (esPack(r) ? 'el ' + etiqueta(sx).toLowerCase() + ' de su ' + r.productoNombre : 'su ' + r.productoNombre) +
+      ' del ' + fechaLarga(antes) + ' al ' + fechaLarga(new Date(ini)) + ' (cambio ' + (mov + 1) + ' de ' + maxMov(r) + ').</p>');
     return { ok: true, cuando: fechaLarga(new Date(ini)) };
   } finally {
     lock.releaseLock();
   }
 }
 
+function semanaDe(ms) { // lunes de esa semana, en hora argentina
+  var d = new Date(ms - 3 * 3600000);
+  var dow = (d.getUTCDay() + 6) % 7;
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow);
+}
+
 // ---------- Créditos ----------
 // El Diagnóstico se descuenta del nivel si el músico lo contrata dentro de los 30 días (05 · Precios y reglas).
 function claveCredito(email) { return 'credito:' + String(email || '').trim().toLowerCase(); }
-function guardarCredito(email, monto) {
+function guardarCredito(email, monto, vigenciaMs, origen) {
+  var actual = credito({ email: email });
+  if (actual.monto > monto) return; // si ya tiene uno mayor vigente, queda ese
   PropertiesService.getScriptProperties().setProperty(claveCredito(email),
-    JSON.stringify({ monto: Math.round(monto), vence: Date.now() + 30 * 86400000, origen: 'Diagnóstico' }));
+    JSON.stringify({ monto: Math.round(monto), vence: Date.now() + vigenciaMs, origen: origen }));
 }
 function credito(b) {
   var v = PropertiesService.getScriptProperties().getProperty(claveCredito(b.email));
@@ -336,7 +377,8 @@ function recordatorios() {
     var p = ev.extendedProperties.private;
     if (p.apv_recordado) return;
     var res = JSON.parse(p.apv_reserva), ini = new Date(ev.start.dateTime);
-    var que = esPack(res) ? 'tu encuentro ' + p.apv_n + ' de ' + res.cantidad + ' (' + res.productoNombre + ')' : 'tu ' + res.productoNombre;
+    var sx = sesionDeEvento(ev, 0);
+    var que = esPack(res) ? 'tu ' + etiqueta(sx).toLowerCase() + ' (' + res.productoNombre + ')' : 'tu ' + res.productoNombre;
     enviar(res.email, 'Mañana: ' + que,
       '<p>Hola, ' + primerNombre(res) + '.</p><p>Te recuerdo ' + que + ': <b>' + fechaLarga(ini) + '</b> (hora de Argentina).</p>' +
       '<p>Link de Zoom: <a href="' + (ev.location || zoom) + '">' + (ev.location || zoom) + '</a></p>' +
@@ -398,8 +440,14 @@ function diaCorto(d) {
   var dia = Number(Utilities.formatDate(d, TZ, 'u')) % 7;
   return DIAS[dia] + ' ' + Utilities.formatDate(d, TZ, 'd') + ' de ' + MESES[Number(Utilities.formatDate(d, TZ, 'M')) - 1];
 }
-function listaFechas(fechas) {
-  return '<ol style="padding-left:22px;margin:8px 0">' + fechas.map(function (f) { return '<li>' + fechaLarga(f) + '</li>'; }).join('') + '</ol>';
+function listaSesiones(ses) {
+  return '<ul style="padding-left:22px;margin:8px 0">' + ses.map(function (x) {
+    return '<li>' + etiqueta(x) + ': ' + fechaLarga(new Date(x.inicio)) + (x.tipo === 'simulacro' ? ' (30 min)' : '') + '</li>';
+  }).join('') + '</ul>';
+}
+function cuantas(ses) {
+  var e = ses.filter(function (x) { return x.tipo !== 'simulacro'; }).length, sm = ses.length - e;
+  return e + ' encuentros' + (sm ? ' y ' + sm + ' simulacros' : '');
 }
 function textoPago(r, pago) {
   var t = pago.medio === 'transferencia' ? 'transferencia' : 'tarjeta (Mercado Pago' + (pago.mpId ? ', op. ' + pago.mpId : '') + ')';
@@ -431,62 +479,64 @@ function enviar(para, asunto, html, adjuntos) {
 function primerNombre(r) { return String(r.nombre).split(' ')[0]; }
 
 // Archivo .ics con todos los encuentros, para sumarlos al calendario de una vez.
-function archivoCalendario(r, fechas, c, duracionMin) {
+function archivoCalendario(r, ses, c) {
   var f = function (d) { return Utilities.formatDate(d, 'UTC', "yyyyMMdd'T'HHmmss'Z'"); };
   var lineas = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//A Primera Vista//Reservas//ES', 'METHOD:PUBLISH'];
-  fechas.forEach(function (d, i) {
-    var fin = new Date(d.getTime() + duracionMin * 60000);
+  ses.forEach(function (x, i) {
+    var d = new Date(x.inicio), fin = new Date(x.fin);
     lineas.push('BEGIN:VEVENT', 'UID:apv-' + f(d) + '-' + i + '@leeraprimeravista.com', 'DTSTAMP:' + f(new Date()),
       'DTSTART:' + f(d), 'DTEND:' + f(fin),
-      'SUMMARY:' + r.productoNombre + (fechas.length > 1 ? ' · Encuentro ' + (i + 1) : '') + ' · A Primera Vista',
+      'SUMMARY:' + r.productoNombre + (ses.length > 1 ? ' · ' + etiqueta(x) : '') + ' · A Primera Vista',
       'LOCATION:' + (c.zoom || ''), 'DESCRIPTION:Por Zoom: ' + (c.zoom || ''), 'END:VEVENT');
   });
   lineas.push('END:VCALENDAR');
   return Utilities.newBlob(lineas.join('\r\n'), 'text/calendar', 'encuentros-a-primera-vista.ics');
 }
 
-function mailMusicoTransferencia(r, b, c, fechas) {
-  var cuando = fechas.length > 1 ? 'tus ' + fechas.length + ' encuentros:' + listaFechas(fechas) : 'el turno del <b>' + fechaLarga(fechas[0]) + '</b> para tu ' + r.productoNombre + '.';
+function mailMusicoTransferencia(r, b, c, ses) {
+  var cuando = ses.length > 1 ? 'tus ' + cuantas(ses) + ':' + listaSesiones(ses) : 'el turno del <b>' + fechaLarga(new Date(ses[0].inicio)) + '</b> para tu ' + r.productoNombre + '.';
   enviar(r.email, 'Tu ' + r.productoNombre + ': datos para la transferencia',
     '<p>Hola, ' + primerNombre(r) + '.</p>' +
     '<p>Te guardé ' + cuando + '</p>' +
     '<p>Para confirmarlo, transferí <b>' + pesos(r.ahora) + '</b>' + (r.saldo > 0 ? ' (la seña)' : '') + ' a:</p>' +
     '<p>Alias: <b>' + (c.alias || '') + '</b><br>' + (c.cbu ? (c.cbuEtiqueta || 'CBU') + ': ' + c.cbu + '<br>' : '') + (c.titular ? 'Titular: ' + c.titular : '') + '</p>' +
-    '<p>Y mandame el comprobante por WhatsApp. ' + (fechas.length > 1 ? 'Los turnos quedan guardados' : 'El turno queda guardado') + ' hasta el ' + fechaLarga(new Date(Number(b.expira))) + '.</p>');
+    '<p>Y mandame el comprobante por WhatsApp. ' + (ses.length > 1 ? 'Los turnos quedan guardados' : 'El turno queda guardado') + ' hasta el ' + fechaLarga(new Date(Number(b.expira))) + '.</p>');
 }
-function mailAvisoTransferencia(r, b, c, fechas) {
+function mailAvisoTransferencia(r, b, c, ses) {
   enviar(c.avisos, 'Reserva por transferencia · ' + r.productoNombre + ' · ' + r.nombre,
-    '<p>' + r.nombre + ' reservó ' + r.productoNombre + (fechas.length > 1 ? ' desde el ' + fechaLarga(fechas[0]) + ' (' + fechas.length + ' encuentros)' : ' para el ' + fechaLarga(fechas[0])) +
+    '<p>' + r.nombre + ' reservó ' + r.productoNombre + (ses.length > 1 ? ' desde el ' + fechaLarga(new Date(ses[0].inicio)) + ' (' + cuantas(ses) + ')' : ' para el ' + fechaLarga(new Date(ses[0].inicio))) +
     ' y va a transferir ' + pesos(r.ahora) + '.</p>' +
     '<p>WhatsApp: ' + r.whatsapp + '</p>' +
     '<p>Cuando veas el comprobante, tocá acá: <a href="' + b.confirmarUrl + '">confirmar la reserva</a>. Si no llega, se libera sola el ' + fechaLarga(new Date(Number(b.expira))) + '.</p>');
 }
-function mailMusicoConfirmada(r, fechas, c, verUrl) {
+function mailMusicoConfirmada(r, ses, c, verUrl) {
   var saldo = r.saldo > 0 ? '<p>Quedó paga la seña. El saldo de <b>' + pesos(r.saldo) + '</b> se abona antes del encuentro, por transferencia.</p>' : '';
   var extra = {
     'diagnostico': '<p>No hace falta que prepares nada.</p>',
     'encuentro-a-medida': '<p>Respondé este mail con la partitura o el material sobre el que querés trabajar, así lo preparo antes.</p>',
   }[r.producto] || '';
   var garantia = /^nivel-/.test(r.producto) ? '<p>La garantía del nivel: «Si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.»</p>' : '';
+  var kit = /^kit-/.test(r.producto) ? '<p>Después de tu audición, sea como sea, nos vemos en una sesión de 30 minutos para repasar cómo te fue (está incluida): escribime y la agendamos.</p>' : '';
+  var reglaCambio = r.mismaSemana ? 'con 24 h de aviso y dentro de la misma semana (' + maxMov(r) + ' cambio' + (maxMov(r) === 1 ? '' : 's') + ')' : 'con 24 h de aviso (hasta ' + maxMov(r) + ' cambios)';
   var moverUrl = verUrl + '&mover=1';
-  if (fechas.length > 1) {
-    enviar(r.email, 'Confirmado: tu ' + r.productoNombre + ' arranca el ' + diaCorto(fechas[0]),
+  if (ses.length > 1) {
+    enviar(r.email, 'Confirmado: tu ' + r.productoNombre + ' arranca el ' + diaCorto(new Date(ses[0].inicio)),
       '<p>Hola, ' + primerNombre(r) + '.</p>' +
-      '<p>Quedó confirmado tu <b>' + r.productoNombre + '</b>. Tus ' + fechas.length + ' encuentros, por Zoom (hora de Argentina):</p>' + listaFechas(fechas) +
+      '<p>Quedó confirmado tu <b>' + r.productoNombre + '</b>. Tus ' + cuantas(ses) + ', por Zoom (hora de Argentina):</p>' + listaSesiones(ses) +
       '<p>El link de Zoom es el mismo para todos: <a href="' + c.zoom + '">' + c.zoom + '</a><br>Te adjunto un archivo para sumarlos a tu calendario de una vez.</p>' +
-      garantia +
-      '<p>Si necesitás mover alguno, lo hacés vos desde <a href="' + moverUrl + '">este link</a>, con 24 h de aviso (hasta ' + MAX_MOVIMIENTOS + ' cambios). Cualquier otra cosa, escribime por WhatsApp: <a href="https://wa.me/' + c.whatsapp + '">wa.me/' + c.whatsapp + '</a>.</p>',
-      [archivoCalendario(r, fechas, c, r.duracion || 60)]);
+      garantia + kit +
+      '<p>Si necesitás mover alguno, lo hacés vos desde <a href="' + moverUrl + '">este link</a>, ' + reglaCambio + '. Cualquier otra cosa, escribime por WhatsApp: <a href="https://wa.me/' + c.whatsapp + '">wa.me/' + c.whatsapp + '</a>.</p>',
+      [archivoCalendario(r, ses, c)]);
     return;
   }
-  enviar(r.email, 'Confirmado: tu ' + r.productoNombre + ' del ' + fechaLarga(fechas[0]),
+  enviar(r.email, 'Confirmado: tu ' + r.productoNombre + ' del ' + fechaLarga(new Date(ses[0].inicio)),
     '<p>Hola, ' + primerNombre(r) + '.</p>' +
-    '<p>Quedó confirmado tu <b>' + r.productoNombre + '</b>. Nos vemos el <b>' + fechaLarga(fechas[0]) + '</b> (hora de Argentina), por Zoom.</p>' +
+    '<p>Quedó confirmado tu <b>' + r.productoNombre + '</b>. Nos vemos el <b>' + fechaLarga(new Date(ses[0].inicio)) + '</b> (hora de Argentina), por Zoom.</p>' +
     '<p>Link: <a href="' + c.zoom + '">' + c.zoom + '</a><br>También te llegó la invitación al calendario.</p>' + extra + saldo +
     '<p>Si necesitás mover el horario, lo hacés vos desde <a href="' + moverUrl + '">este link</a>, con 24 h de aviso. Cualquier otra cosa, escribime por WhatsApp: <a href="https://wa.me/' + c.whatsapp + '">wa.me/' + c.whatsapp + '</a>.</p>');
 }
 // A Muse le llega el aviso de la venta, ya cargada en Ventas, para que sume la ficha del músico.
-function mailMuse(r, fechas, pago, c, fila) {
+function mailMuse(r, ses, pago, c, fila) {
   var para = [c.muse, c.avisos].filter(String).join(',');
   var bienvenida = /^nivel-|^kit-/.test(r.producto) ? '<p>Es un recorrido nuevo: seguí el onboarding de siempre (kit de bienvenida y videos), igual que con las reservas de Agora.</p>' : '';
   enviar(para, 'Venta web · ' + r.productoNombre + ' · ' + r.nombre,
@@ -495,7 +545,8 @@ function mailMuse(r, fechas, pago, c, fila) {
       : 'No se pudo cargar sola en 02 · Métricas › Ventas: Muse, cargala vos con estos datos.') + '</p>' + bienvenida +
     '<p>Músico: ' + r.nombre + '<br>Producto: ' + r.productoNombre + '<br>' +
     'Pago: Contado · ' + textoPago(r, pago) + (pago.neto ? ' (neto acreditado por MP: ' + pesos(pago.neto) + ')' : '') + '<br>' +
-    (fechas.length > 1 ? 'Encuentros: ' + fechas.map(function (f) { return fechaLarga(f); }).join(' · ') : 'Encuentro: ' + fechaLarga(fechas[0])) +
+    (ses.length > 1 ? 'Sesiones: ' + ses.map(function (x) { return etiqueta(x) + ' ' + fechaLarga(new Date(x.inicio)); }).join(' · ') : 'Encuentro: ' + fechaLarga(new Date(ses[0].inicio))) +
+    (r.audicion ? '<br>Audición: ' + diaCorto(new Date(Number(r.audicion))) + ' (la sesión post-audición se agenda después, sin cobro)' : '') +
     '<br>Mail: ' + r.email + '<br>WhatsApp: ' + r.whatsapp +
     '<br>¿Cómo te enteraste?: ' + (r.origen || '(no lo marcó)') + (r.nota ? '<br>Nota del músico: ' + r.nota : '') + '</p>');
 }
