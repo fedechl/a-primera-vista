@@ -283,7 +283,7 @@
       </div>
       <div id="bloque-sim" hidden>
         <h2>Elegí el horario de tus simulacros</h2>
-        <p class="suave">Los 4 viernes antes de tu audición, 30 minutos cada uno.</p>
+        <p class="suave" id="texto-sim">Los 4 viernes antes de tu audición, 30 minutos cada uno.</p>
         <div class="horas" id="horas-sim" role="group" aria-label="Horarios de simulacro"></div>
       </div>
       <p class="error" id="error-turnos" hidden></p>
@@ -591,10 +591,13 @@
           return;
         }
         var real = r.kit || kit, k = PRODUCTOS[real];
+        // Con 3 semanas, el Express tiene 3 simulacros (decisión de Fede, 21/11/2026): se avisa antes de pagar.
+        var t0 = r.dias[0].turnos[0], nSim = r.sims && r.sims[t0] ? Object.values(r.sims[t0])[0].length : 4;
+        var nota = nSim < 4 ? '<p class="suave" style="margin-top:8px">Con tu fecha, el plan tiene 4 encuentros y ' + nSim + ' simulacros.</p>' : '';
         var aviso = real !== kit ? '<p class="suave">Con tu fecha y mi agenda (feriados y vacaciones incluidos), el ' + esc(PRODUCTOS[kit].nombre.replace('Kit de Audición · ', 'Kit ')) + ' no llega a entrar completo antes de tu audición. Lo que entra es este:</p>'
           : '<p class="suave">Faltan ' + semanas + ' semanas: te corresponde</p>';
         $('kit-resultado').innerHTML = '<div class="opcion">' + aviso + '<h3>' + esc(k.nombre) + '</h3><p>' + esc(k.bajada) + '</p>' +
-          '<p class="precio">' + pesos(k.tarjeta) + ' · ' + pesos(k.transferencia) + ' con descuento por transferencia</p>' +
+          '<p class="precio">' + pesos(k.tarjeta) + ' · ' + pesos(k.transferencia) + ' con descuento por transferencia</p>' + nota +
           '<p style="margin-top:14px"><a class="boton" href="?p=' + real + '&audicion=' + f + '">Elegir mis horarios</a></p></div>';
       }).catch(function (e) { boton.disabled = false; $('kit-resultado').innerHTML = '<p class="error">' + esc(e.message || 'No pude revisar la agenda. Probá de nuevo.') + '</p>'; });
     };
@@ -653,7 +656,7 @@
     var li = document.createElement('li');
     li.textContent = 'Reservar no te ata: si antes del primer encuentro te cambia algo, te devuelvo lo que pagaste (con tarjeta, menos la comisión de Mercado Pago).';
     document.querySelector('.despues ul').appendChild(li);
-    if (p.kit) $('texto-sena').textContent = 'Se paga al reservar. El plan se arma hacia tu audición: los encuentros van el mismo día y a la misma hora, y las últimas 4 semanas suman el simulacro del viernes. Todo antes de tu audición del ' + fmt(new Date(audicion + 'T12:00:00-03:00').getTime(), { day: 'numeric', month: 'long' }) + '.';
+    if (p.kit) $('texto-sena').textContent = 'Se paga al reservar. El plan se arma hacia tu audición: los encuentros van el mismo día y a la misma hora, y las últimas semanas suman el simulacro del viernes. Todo antes de tu audición del ' + fmt(new Date(audicion + 'T12:00:00-03:00').getTime(), { day: 'numeric', month: 'long' }) + '.';
   }
 
   var desdeAcceso = 0;
@@ -725,6 +728,8 @@
         b.onclick = function () { simElegido = Number(m); mostrarElegido(ms); };
         $('horas-sim').appendChild(b);
       });
+      var nS = Object.values(sims[ms] || {})[0]; nS = nS ? nS.length : 4;
+      $('texto-sim').textContent = (nS === 4 ? 'Los 4 viernes' : 'Los ' + nS + ' viernes') + ' antes de tu audición, 30 minutos cada uno.';
       $('bloque-sim').hidden = false;
       $('bloque-sim').scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;

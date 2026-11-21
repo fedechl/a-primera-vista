@@ -268,10 +268,27 @@ export function planKit(producto, inicio, simMin, audicion, a) {
     if (s == null) return null;
     intensivos.push(s); ocupa(s, p.duracion);
   }
-  if (express3) { // el encuentro que falta: dos días después del primero, mismo horario
-    const s = intensivos[0] + 2 * DIA;
-    if (!(s < sims[0] || lunesDe(s) === lunesDe(sims[0])) || !libreEn(a, s, p.duracion, usados)) return null;
-    intensivos.push(s); ocupa(s, p.duracion);
+  if (express3) {
+    // El encuentro que falta, a la misma hora, en otro día de una de las semanas del plan: nunca el mismo
+    // día que un simulacro ni que otro encuentro, y si se puede, a dos días o más del encuentro de esa semana
+    // (decisión de Fede, 21/11/2026: con 3 semanas, 4 encuentros y 3 simulacros).
+    const hora = intensivos[0] - lunesDe(intensivos[0]) - Math.floor((intensivos[0] - lunesDe(intensivos[0])) / DIA) * DIA;
+    const mismoDia = (x, y) => Math.floor((x - lunesDe(x)) / DIA) === Math.floor((y - lunesDe(y)) / DIA) && lunesDe(x) === lunesDe(y);
+    let extra = null;
+    // Primera pasada: a dos días o más del encuentro de esa semana; segunda: cualquier día libre.
+    for (const separado of [true, false]) {
+      for (const sm of sims) {
+        if (extra != null) break;
+        const lun = lunesDe(sm);
+        const enc = intensivos.find((x) => lunesDe(x) === lun);
+        extra = [0, 1, 2, 3, 4].map((d) => lun + d * DIA + hora)
+          .find((c) => c >= ahora && c + p.duracion * 60000 <= audicion &&
+            (!separado || !enc || Math.abs(c - enc) >= 2 * DIA) &&
+            ![...sims, ...intensivos].some((x) => mismoDia(x, c)) && libreEn(a, c, p.duracion, usados)) ?? null;
+      }
+    }
+    if (extra == null) return null;
+    intensivos.push(extra); ocupa(extra, p.duracion);
     intensivos.sort((x, y) => x - y);
   }
   // 3. Base: desde el inicio elegido, cada 1 o 2 semanas, antes del tramo intensivo.
