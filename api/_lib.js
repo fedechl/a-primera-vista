@@ -25,8 +25,9 @@ export const PRODUCTOS = {
   },
 };
 
-// Horarios de trabajo (los mismos que en Agora). 1 = lunes … 5 = viernes. Horas en hora argentina.
-export const HORARIOS = {
+// La disponibilidad sale del calendario «APV · Disponibilidad» de Fede (se edita semana a semana).
+// Estos horarios son solo los de muestra del modo prueba (los mismos que tenía Agora). 1 = lunes … 5 = viernes.
+export const HORARIOS_PRUEBA = {
   1: [[9, 12], [13, 16]],
   3: [[9, 15]],
   5: [[9, 12], [13, 16]],
@@ -66,6 +67,7 @@ export function cfg() {
     titular: env('TRANSFER_TITULAR'),
     avisos: env('AVISOS_EMAIL'),
     muse: env('MUSE_EMAIL'),
+    ventas: env('VENTAS_SHEET_ID'),
     whatsapp: env('WHATSAPP', '5491178165441'),
     sitio: sitio(),
   };
@@ -129,33 +131,50 @@ export async function leerCuerpo(req) {
 const aAR = (ms) => new Date(ms + TZ_OFFSET_MIN * 60000);
 const desdeAR = (y, m, d, h, min) => Date.UTC(y, m, d, h, min) - TZ_OFFSET_MIN * 60000;
 
-export function calcularTurnos(producto, ocupados, feriados, ahora = Date.now()) {
-  const p = PRODUCTOS[producto];
-  const desde = ahora + ANTICIPACION_H * 3600000;
-  const feriadosSet = new Set(feriados); // 'AAAA-MM-DD'
-  const dias = [];
-  const hoy = aAR(ahora);
-  for (let i = 0; i <= DIAS_VISIBLES; i++) {
+export function bloquesDePrueba(ahora = Date.now()) {
+  const hoy = aAR(ahora), bloques = [];
+  for (let i = 0; i <= DIAS_VISIBLES + 1; i++) {
     const d = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate() + i));
-    const clave = d.toISOString().slice(0, 10);
-    const bloques = HORARIOS[d.getUTCDay()];
-    if (!bloques || feriadosSet.has(clave)) continue;
-    const turnos = [];
-    for (const [hIni, hFin] of bloques) {
-      for (let min = hIni * 60; min + p.duracion <= hFin * 60; min += PASO_MIN) {
-        const s = desdeAR(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, min);
-        const e = s + p.duracion * 60000;
-        if (s < desde) continue;
-        if (ocupados.some((o) => s < o.e && e > o.s)) continue;
-        turnos.push(s);
-      }
+    for (const [a, b] of HORARIOS_PRUEBA[d.getUTCDay()] || []) {
+      bloques.push({ s: desdeAR(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), a, 0), e: desdeAR(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), b, 0) });
     }
-    if (turnos.length) dias.push({ fecha: clave, turnos });
   }
-  return dias;
+  return bloques;
 }
 
-export function turnoValido(producto, inicio, ahora = Date.now()) {
-  // El turno tiene que ser uno de los que se ofrecen (sin mirar el calendario: eso lo revisa Apps Script).
-  return calcularTurnos(producto, [], [], ahora).some((d) => d.turnos.includes(inicio));
+// disponibles: bloques en los que Fede atiende. ocupados: todo lo que bloquea. feriados: 'AAAA-MM-DD'.
+export function calcularTurnos(producto, disponibles, ocupados, feriados, ahora = Date.now()) {
+  const p = PRODUCTOS[producto];
+  const desde = ahora + ANTICIPACION_H * 3600000;
+  const hasta = ahora + (DIAS_VISIBLES + 1) * 86400000;
+  const feriadosSet = new Set(feriados);
+  const turnos = new Set();
+  for (const b of disponibles) {
+    for (let s = b.s; s + p.duracion * 60000 <= b.e; s += PASO_MIN * 60000) {
+      const e = s + p.duracion * 60000;
+      if (s < desde || s > hasta) continue;
+      if (feriadosSet.has(aAR(s).toISOString().slice(0, 10))) continue;
+      if (ocupados.some((o) => s < o.e && e > o.s)) continue;
+      turnos.add(s);
+    }
+  }
+  const dias = new Map();
+  [...turnos].sort((a, b) => a - b).forEach((s) => {
+    const clave = aAR(s).toISOString().slice(0, 10);
+    if (!dias.has(clave)) dias.set(clave, []);
+    dias.get(clave).push(s);
+  });
+  return [...dias].map(([fecha, t]) => ({ fecha, turnos: t }));
+}
+
+// Control rápido antes de ir al calendario (que es quien tiene la última palabra).
+export function turnoPlausible(inicio, ahora = Date.now()) {
+  return Number.isFinite(inicio) && inicio % (15 * 60000) === 0 &&
+    inicio >= ahora + ANTICIPACION_H * 3600000 && inicio <= ahora + (DIAS_VISIBLES + 2) * 86400000;
+}
+
+export async function leerAgenda() {
+  if (modoPrueba()) return { disponibles: bloquesDePrueba(), ocupados: [], feriados: [] };
+  const ahora = Date.now();
+  return gas('ocupado', { desde: ahora, hasta: ahora + (DIAS_VISIBLES + 2) * 86400000 });
 }

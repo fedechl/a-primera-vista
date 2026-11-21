@@ -2,7 +2,7 @@
 // Retiene el turno en el calendario y, con tarjeta, arma el pago de Mercado Pago.
 import {
   PRODUCTOS, RETENCION_TARJETA_MIN, RETENCION_TRANSFERENCIA_H, firmar, gas, json, leerCuerpo,
-  modoPrueba, montos, mp, nuevoId, sitio, turnoValido,
+  modoPrueba, montos, mp, nuevoId, sitio, turnoPlausible,
 } from './_lib.js';
 
 const limpiar = (s, n) => String(s || '').replace(/[\u0000-\u001f<>]/g, ' ').trim().slice(0, n);
@@ -16,12 +16,14 @@ export default async function handler(req, res) {
   const email = limpiar(b.email, 120).toLowerCase();
   const whatsapp = limpiar(b.whatsapp, 30);
   const nota = limpiar(b.nota, 500);
+  const ORIGENES = ['Recomendación', 'Instagram', 'YouTube', 'Flyer', 'Grupo de músicos o coro', 'Google', 'Otro', 'Ya trabajé con Fede'];
+  const origen = ORIGENES.includes(b.origen) ? b.origen : '';
   const medio = b.medio === 'transferencia' ? 'transferencia' : 'tarjeta';
 
   if (!p) return json(res, 400, { error: 'Propuesta desconocida.' });
   if (!nombre || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || whatsapp.replace(/\D/g, '').length < 8)
     return json(res, 400, { error: 'Revisá tu nombre, tu mail y tu WhatsApp.' });
-  if (!turnoValido(b.p, inicio)) return json(res, 400, { error: 'Ese horario ya no está disponible. Elegí otro.' });
+  if (!turnoPlausible(inicio)) return json(res, 400, { error: 'Ese horario ya no está disponible. Elegí otro.' });
 
   const id = nuevoId();
   const m = montos(p, medio);
@@ -36,7 +38,7 @@ export default async function handler(req, res) {
   try {
     const hold = await gas('retener', {
       id, inicio, fin: inicio + p.duracion * 60000, expira,
-      reserva: { producto: b.p, productoNombre: p.nombre, nombre, email, whatsapp, nota, medio, ...m },
+      reserva: { producto: b.p, productoNombre: p.nombre, nombre, email, whatsapp, nota, origen, medio, ...m },
       confirmarUrl: `${sitio()}/api/confirmar?id=${id}&k=${firmar('confirmar', id)}`,
       verUrl: `${sitio()}/reservar/?id=${id}&k=${ver}`,
     });

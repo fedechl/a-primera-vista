@@ -48,7 +48,7 @@
 
   form { display: grid; gap: 16px; }
   label { display: grid; gap: 4px; font-size: 17px; }
-  input, textarea { font: inherit; font-size: 18px; padding: 11px 12px; border: 1px solid var(--linea); border-radius: 6px; background: #fff; color: var(--texto); width: 100%; }
+  input, textarea, select { font: inherit; font-size: 18px; padding: 11px 12px; border: 1px solid var(--linea); border-radius: 6px; background: #fff; color: var(--texto); width: 100%; }
   textarea { min-height: 88px; resize: vertical; }
   fieldset { border: 0; display: grid; gap: 10px; }
   legend { font-size: 17px; margin-bottom: 6px; }
@@ -127,6 +127,10 @@
         <label>Nombre y apellido <input name="nombre" autocomplete="name" required maxlength="80"></label>
         <label>Mail <input name="email" type="email" autocomplete="email" required maxlength="120"></label>
         <label>WhatsApp <input name="whatsapp" type="tel" autocomplete="tel" required maxlength="30" placeholder="Con código de área"></label>
+        <label>¿Cómo te enteraste? <select name="origen">
+          <option value="">Elegí una opción</option><option>Recomendación</option><option>Instagram</option><option>YouTube</option>
+          <option>Flyer</option><option>Grupo de músicos o coro</option><option>Google</option><option>Ya trabajé con Fede</option><option>Otro</option>
+        </select></label>
         <label id="campo-nota" hidden>¿Sobre qué querés trabajar? <textarea name="nota" maxlength="500" placeholder="Una obra, una audición, algo que se te complica…"></textarea></label>
         <fieldset>
           <legend>¿Cómo pagás?</legend>
@@ -136,7 +140,7 @@
         <p class="suave" id="texto-sena" hidden></p>
         <p class="error" id="error-form" hidden></p>
         <button class="boton" id="enviar" type="submit">Reservar</button>
-        <p class="suave">Si necesitás mover el horario, me avisás por WhatsApp con 24 h de anticipación.</p>
+        <p class="suave">Si necesitás mover el horario, lo podés hacer vos desde el mail de confirmación, con 24 h de anticipación.</p>
       </form>
     </section>
 
@@ -168,6 +172,58 @@
   var producto = q.get('p'), p = PRODUCTOS[producto], elegido = null;
 
   function fin(html) { $('fin').innerHTML = html; mostrar('paso-fin'); }
+
+  function pintarDias(dias, alElegir) {
+    $('cargando').hidden = true;
+    $('dias').innerHTML = '';
+    if (!dias.length) { $('error-turnos').innerHTML = 'No quedan horarios libres en las próximas semanas. Escribime por <a href="' + WA + '">WhatsApp</a> y lo coordinamos.'; $('error-turnos').hidden = false; return; }
+    dias.forEach(function (d, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'dia'; b.setAttribute('aria-pressed', 'false');
+      var ms = d.turnos[0];
+      b.innerHTML = '<small>' + fmt(ms, { weekday: 'short' }).replace('.', '') + '</small><b>' + fmt(ms, { day: 'numeric' }) + '</b><small>' + fmt(ms, { month: 'short' }).replace('.', '') + '</small>';
+      b.onclick = function () { elegirDia(d, b, alElegir); };
+      $('dias').appendChild(b);
+      if (i === 0) elegirDia(d, b, alElegir);
+    });
+  }
+
+  function elegirDia(d, boton, alElegir) {
+    [].forEach.call($('dias').children, function (x) { x.setAttribute('aria-pressed', String(x === boton)); });
+    $('horas').innerHTML = '';
+    d.turnos.forEach(function (ms) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'hora'; b.setAttribute('aria-pressed', 'false');
+      b.textContent = fmt(ms, { hour: '2-digit', minute: '2-digit', hour12: false });
+      b.onclick = function () { alElegir(ms, b); };
+      $('horas').appendChild(b);
+    });
+    $('bloque-horas').hidden = false;
+  }
+
+  // Mover un encuentro ya confirmado (link del mail de confirmación)
+  if (q.get('id') && q.get('k') && q.get('mover')) {
+    var base = 'id=' + encodeURIComponent(q.get('id')) + '&k=' + encodeURIComponent(q.get('k'));
+    $('titulo').textContent = 'Mover tu encuentro';
+    $('bajada').textContent = 'Elegí el nuevo día y la hora (hora de Argentina).';
+    mostrar('paso-turno');
+    fetch('/api/mover?' + base).then(function (r) { return r.json(); }).then(function (r) {
+      if (r.prueba) $('aviso-prueba').hidden = false;
+      if (r.error) throw new Error(r.error);
+      if (!r.prueba && !r.puedeMover) throw new Error(r.movimientos >= 2 ? 'Ya lo moviste 2 veces. Escribime por WhatsApp y lo vemos.' : 'Falta menos de 24 h para tu encuentro. Para moverlo, escribime por WhatsApp.');
+      if (r.cuando) $('bajada').textContent = 'Hoy está el ' + r.cuando + '. Elegí el nuevo día y la hora (hora de Argentina).';
+      pintarDias(r.dias, function (ms, boton) {
+        if (!confirm('¿Lo pasamos al ' + cuando(ms) + '?')) return;
+        boton.disabled = true;
+        fetch('/api/mover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: q.get('id'), k: q.get('k'), inicio: ms }) })
+          .then(function (x) { return x.json(); }).then(function (x) {
+            if (x.error) throw new Error(x.error);
+            fin('<p><b>Listo, lo moviste.</b> Tu encuentro quedó para el <b>' + esc(cuando(ms)) + '</b> (hora de Argentina). El link de Zoom es el mismo y te llegó la actualización por mail.</p>');
+          }).catch(function (e) { boton.disabled = false; $('error-turnos').textContent = e.message; $('error-turnos').hidden = false; });
+      });
+    }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').innerHTML = esc(e.message) + ' <a href="' + WA + '">WhatsApp</a>'; $('error-turnos').hidden = false; });
+    return;
+  }
 
   // Volviendo de Mercado Pago (o del link del mail)
   if (q.get('id') && q.get('k')) {
@@ -213,33 +269,10 @@
   if (producto === 'encuentro-a-medida') $('campo-nota').hidden = false;
 
   fetch('/api/turnos?p=' + encodeURIComponent(producto)).then(function (r) { return r.json(); }).then(function (r) {
-    $('cargando').hidden = true;
     if (r.prueba) $('aviso-prueba').hidden = false;
     if (r.error) throw new Error(r.error);
-    if (!r.dias.length) { $('error-turnos').innerHTML = 'No quedan horarios libres en las próximas semanas. Escribime por <a href="' + WA + '">WhatsApp</a> y lo coordinamos.'; $('error-turnos').hidden = false; return; }
-    r.dias.forEach(function (d, i) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'dia'; b.setAttribute('aria-pressed', 'false');
-      var ms = d.turnos[0];
-      b.innerHTML = '<small>' + fmt(ms, { weekday: 'short' }).replace('.', '') + '</small><b>' + fmt(ms, { day: 'numeric' }) + '</b><small>' + fmt(ms, { month: 'short' }).replace('.', '') + '</small>';
-      b.onclick = function () { elegirDia(d, b); };
-      $('dias').appendChild(b);
-      if (i === 0) elegirDia(d, b);
-    });
+    pintarDias(r.dias, elegirHora);
   }).catch(function (e) { $('cargando').hidden = true; $('error-turnos').textContent = e.message || 'No pude cargar los horarios.'; $('error-turnos').hidden = false; });
-
-  function elegirDia(d, boton) {
-    [].forEach.call($('dias').children, function (x) { x.setAttribute('aria-pressed', String(x === boton)); });
-    $('horas').innerHTML = '';
-    d.turnos.forEach(function (ms) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'hora'; b.setAttribute('aria-pressed', 'false');
-      b.textContent = fmt(ms, { hour: '2-digit', minute: '2-digit', hour12: false });
-      b.onclick = function () { elegirHora(ms); };
-      $('horas').appendChild(b);
-    });
-    $('bloque-horas').hidden = false;
-  }
 
   function elegirHora(ms) {
     elegido = ms;
@@ -254,7 +287,7 @@
     ev.preventDefault();
     var f = ev.target, datos = {
       p: producto, inicio: elegido, nombre: f.nombre.value, email: f.email.value,
-      whatsapp: f.whatsapp.value, nota: f.nota.value, medio: f.medio.value
+      whatsapp: f.whatsapp.value, nota: f.nota.value, origen: f.origen.value, medio: f.medio.value
     };
     if (!datos.nombre.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(datos.email.trim()) || datos.whatsapp.replace(/\D/g, '').length < 8) {
       $('error-form').textContent = 'Revisá tu nombre, tu mail y tu WhatsApp.'; $('error-form').hidden = false; return;

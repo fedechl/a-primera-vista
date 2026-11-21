@@ -4,12 +4,13 @@ Reemplazo de Agora para el **Diagnóstico** y el **Encuentro a medida**. Página
 
 ## Cómo funciona
 
-1. La página pide los horarios libres a `/api/turnos`. Salen de los horarios de trabajo (lunes y viernes 9-12 y 13-16, miércoles 9-15, cada 60 min, con 24 h de anticipación) menos lo ocupado en los calendarios de Fede, los feriados y media hora de traslado alrededor de los eventos con dirección.
+1. La página pide los horarios libres a `/api/turnos`. Salen del calendario **«APV · Disponibilidad»** (los bloques «Disponible» que Fede marca semana a semana; arranca con los mismos horarios que tenía Agora, repetidos cada semana), cada 60 min y con 24 h de anticipación, menos lo ocupado en los demás calendarios de Fede, los feriados y media hora de traslado alrededor de los eventos con dirección. Vacaciones: un evento de día completo marcado como ocupado, o borrar esos bloques.
 2. Al reservar, `/api/reservar` retiene el turno en el calendario («⏳ Pendiente de pago»).
    - **Tarjeta:** pago en Mercado Pago (1 pago). Al aprobarse, `/api/mp` confirma solo. El turno retenido dura 40 min.
    - **Transferencia** (8 % de descuento): el músico recibe el alias por mail; a Fede le llega un mail con el botón «confirmar la reserva», que toca al ver el comprobante. El turno retenido dura hasta 24 h.
-3. Al confirmar: el evento pasa a rojo con el Zoom, el músico recibe la invitación y un mail, y a Muse le llega la venta para cargar en 02 · Métricas › Ventas.
-4. Cada 10 minutos, Apps Script libera los turnos retenidos que no se pagaron.
+3. Al confirmar: el evento pasa a rojo con el Zoom, el músico recibe la invitación y un mail, la venta se carga sola en 02 · Métricas › Ventas (Cargó = Web, Monto = neto) y a Muse le llega el aviso para la ficha.
+4. El músico puede mover su encuentro desde el mail (`/reservar/?id=…&mover=1`): con 24 h de aviso y hasta 2 veces.
+5. Cada 10 minutos, Apps Script libera los turnos retenidos que no se pagaron. Cada hora manda el recordatorio de las 24 h.
 
 Precios y horarios: `api/_lib.js` (y los textos de `reservar/index.html`). Si cambian en 05 · Precios y reglas, se cambian en los dos.
 
@@ -24,6 +25,7 @@ Precios y horarios: `api/_lib.js` (y los textos de `reservar/index.html`). Si ca
 | `TRANSFER_ALIAS`, `TRANSFER_CBU`, `TRANSFER_TITULAR` | Datos para transferir |
 | `AVISOS_EMAIL` | Mail de Fede para los avisos |
 | `MUSE_EMAIL` | Casilla de AgentMail de Muse |
+| `VENTAS_SHEET_ID` | ID de 02 · Métricas de impacto |
 | `SITE_URL` | `https://leeraprimeravista.com` (opcional) |
 
 Sin `GAS_URL` la página anda en **modo prueba**: muestra horarios de muestra y no cobra ni agenda.
@@ -32,5 +34,5 @@ Sin `GAS_URL` la página anda en **modo prueba**: muestra horarios de muestra y 
 
 1. script.google.com › Proyecto nuevo «APV · Reservas», con la cuenta de Fede.
 2. Pegar `Reservas.gs`. En Configuración del proyecto, tildar «Mostrar appsscript.json» y pegar `appsscript.json`.
-3. Correr `instalar()` y aceptar los permisos. Copiar del registro la clave (`GAS_SECRET`).
+3. Correr `instalar()` y aceptar los permisos. Crea el calendario «APV · Disponibilidad» y los activadores. Copiar del registro la clave (`GAS_SECRET`).
 4. Implementar › Nueva implementación › Aplicación web (Ejecutar como: yo · Acceso: cualquier persona). Copiar la URL (`GAS_URL`).
