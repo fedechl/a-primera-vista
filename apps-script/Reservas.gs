@@ -673,7 +673,7 @@ function mailMusicoConfirmada(r, ses, c, verUrl) {
     'encuentro-a-medida': '<p>Respondé este mail con la partitura o el material sobre el que querés trabajar, así lo preparo antes.</p>',
   }[r.producto] || '';
   var garantia = /^nivel-/.test(r.producto) ? '<p>La garantía del nivel: «Si al llegar al octavo encuentro todavía no alcanzaste los hitos del nivel, seguimos sin cargo hasta completarlos.»</p>' : '';
-  var kit = /^kit-/.test(r.producto) ? '<p>Después de tu audición, sea como sea, nos vemos en una sesión de 30 minutos para repasar cómo te fue (está incluida): escribime y la agendamos.</p>' : '';
+  var kit = /^kit-/.test(r.producto) ? '<p>Después de tu audición, sea como sea, nos vemos en una sesión de 30 minutos para repasar cómo te fue (está incluida). Te escribo por WhatsApp para dejarla agendada.</p>' : '';
   var reglaCambio = r.mismaSemana ? 'con 24 h de aviso y dentro de la misma semana (' + maxMov(r) + ' cambio' + (maxMov(r) === 1 ? '' : 's') + ')' : 'con 24 h de aviso (hasta ' + maxMov(r) + ' cambios)';
   var moverUrl = verUrl + '&mover=1';
   if (ses.length > 1) {
