@@ -121,6 +121,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .nomvivo{color:var(--azul);font-weight:700}
 .nomvivo.vacio{color:var(--suave);font-weight:400;font-style:italic;border-bottom:2px dashed var(--dorado)}
 a.btn.off{opacity:.35;pointer-events:none}
+.alanding{display:block;text-align:center;color:var(--dorado);font-weight:600;font-size:16px;text-decoration:underline;text-underline-offset:3px;margin-top:6px}
+.alanding:focus-visible{outline:3px solid var(--dorado);outline-offset:2px}
 </style>
 <script>/* ?o=prueba...: modo prueba, no cuenta la visita en Vercel ni guarda respuestas */
 window.APV_PRUEBA=(function(){try{return /^prueba/.test((new URLSearchParams(location.search).get('o')||'').toLowerCase())}catch(x){return false}})();
@@ -276,6 +278,7 @@ if(!window.APV_PRUEBA){var s=document.createElement('script');s.defer=true;s.src
       <div class="msj" id="msj" style="color:var(--tinta)"></div>
       <a class="btn off" aria-disabled="true" id="wa" href="https://wa.me/5491178165441" target="_blank" rel="noopener" style="background:var(--dorado);color:var(--azul);text-align:center;text-decoration:none">Mandármelo por WhatsApp</a>
       <p class="nota">Tus números le llegan a Fede. Tu grabación no sale de tu celular.</p>
+      <a class="alanding" href="/" target="_blank" rel="noopener">Mientras tanto, mirá cómo trabajo y qué propuestas hay →</a>
     </div>
     <p class="slogan">Que la partitura te hable.</p>
     <button class="btn sec" id="otravez" style="margin-top:4px">Empezar de nuevo</button>
