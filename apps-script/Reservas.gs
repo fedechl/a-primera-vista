@@ -60,7 +60,7 @@ function doPost(e) {
     if (!b.secret || b.secret !== PropertiesService.getScriptProperties().getProperty('SECRET')) throw new Error('clave inválida');
     CFG_ACTUAL = b.cfg || null;
     // Las tareas automáticas (limpiar, recordatorios) no reciben la configuración: queda guardada la última.
-    if (b.cfg) PropertiesService.getScriptProperties().setProperty('CFG', JSON.stringify({ muse: b.cfg.muse, avisos: b.cfg.avisos, ventas: b.cfg.ventas, sitio: b.cfg.sitio, whatsapp: b.cfg.whatsapp }));
+    if (b.cfg) PropertiesService.getScriptProperties().setProperty('CFG', JSON.stringify({ muse: b.cfg.muse, avisos: b.cfg.avisos, ventas: b.cfg.ventas, sitio: b.cfg.sitio, whatsapp: b.cfg.whatsapp, feriadosSheet: b.cfg.feriadosSheet }));
     var acciones = { ocupado: ocupado, retener: retener, confirmar: confirmar, estado: estado, liberar: liberar, mover: mover, credito: credito,
       habilitado: habilitado, pedirAcceso: pedirAcceso, habilitar: habilitar, evento: evento, accesoPorMail: accesoPorMail };
     if (!acciones[b.accion]) throw new Error('acción desconocida');
@@ -607,7 +607,28 @@ function limpiar() {
     Calendar.Events.remove('primary', ev.id);
   });
   var c = JSON.parse(PropertiesService.getScriptProperties().getProperty('CFG') || '{}');
+  sacarDisponibleEnFeriados(c);
   Object.keys(vencidas).forEach(function (id) { avisarSinPagar(c, id, vencidas[id].r, vencidas[id].inicio); });
+}
+
+// Una vez por día: los feriados no muestran el bloque «Disponible» en APV · Disponibilidad
+// (decisión de Fede, 23/11/2026). Solo se borra el bloque que se repite; si Fede agrega uno suelto
+// para trabajar un feriado, ese queda y la web lo ofrece.
+function sacarDisponibleEnFeriados(c) {
+  try {
+    var props = PropertiesService.getScriptProperties();
+    var hoy = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+    if (props.getProperty('FERIADOS_LIMPIOS') === hoy) return;
+    var dispId = props.getProperty('CAL_DISP'); if (!dispId) return;
+    var desde = new Date(), hasta = new Date(Date.now() + 120 * 86400000);
+    var dias = feriados(desde, hasta, c);
+    var r = Calendar.Events.list(dispId, { timeMin: new Date(Date.now() - 86400000).toISOString(), timeMax: hasta.toISOString(), singleEvents: true, maxResults: 250 });
+    (r.items || []).forEach(function (ev) {
+      if (!ev.recurringEventId || !ev.start.dateTime) return;
+      if (dias.indexOf(ev.start.dateTime.slice(0, 10)) >= 0) Calendar.Events.remove(dispId, ev.id);
+    });
+    props.setProperty('FERIADOS_LIMPIOS', hoy);
+  } catch (e) { /* nunca frena la limpieza */ }
 }
 
 // Una reserva que venció sin pago: Muse recibe los datos para el seguimiento y queda en 02 › Captación · Consultas.
